@@ -23,7 +23,7 @@ class EmailInput extends StatelessWidget {
         TextField(
           controller: controller,
           decoration: InputDecoration(
-            prefixIcon: Icon(Icons.email, color: AppColors.primaryRed),
+            prefixIcon: Icon(Icons.email, color: AppColors.accentColor),
             enabledBorder: UnderlineInputBorder(
               borderSide: BorderSide(color: AppColors.primaryLogo),
             ),

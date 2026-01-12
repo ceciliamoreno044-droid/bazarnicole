@@ -31,11 +31,11 @@ class PasswordInput extends StatelessWidget {
           controller: controller,
           obscureText: obscurePassword,
           decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.lock, color: AppColors.primaryRed),
+            prefixIcon: const Icon(Icons.lock, color: AppColors.accentColor),
             suffixIcon: IconButton(
               icon: Icon(
                 obscurePassword ? Icons.visibility_off : Icons.visibility,
-                color: AppColors.primaryRed,
+                color: AppColors.accentColor,
               ),
               onPressed: onToggle,
             ),
