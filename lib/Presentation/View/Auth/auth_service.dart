@@ -1,7 +1,6 @@
 import 'package:bazarnicole/Presentation/View/Services/database_service.dart';
 import 'package:bazarnicole/Presentation/View/Services/session_service.dart';
 
-
 class AuthService {
   /// Login con verificación en SQLite y guardado de sesión
   Future<Map<String, dynamic>?> login(String email, String password) async {

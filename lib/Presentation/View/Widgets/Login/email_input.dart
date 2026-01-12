@@ -14,7 +14,7 @@ class EmailInput extends StatelessWidget {
         Text(
           "Correo electrónico:",
           style: TextStyle(
-            color: AppColors.blackOverlay,
+            color: AppColors.primaryLogo,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -25,10 +25,10 @@ class EmailInput extends StatelessWidget {
           decoration: InputDecoration(
             prefixIcon: Icon(Icons.email, color: AppColors.primaryRed),
             enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: AppColors.blackOverlay),
+              borderSide: BorderSide(color: AppColors.primaryLogo),
             ),
             focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: AppColors.blackOverlay, width: 2),
+              borderSide: BorderSide(color: AppColors.primaryLogo, width: 2),
             ),
           ),
         ),
