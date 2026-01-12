@@ -1,0 +1,53 @@
+import 'package:bazarnicole/Presentation/View/Utils/Colors.dart';
+import 'package:flutter/material.dart';
+
+class PasswordInput extends StatelessWidget {
+  final TextEditingController controller;
+  final bool obscurePassword;
+  final VoidCallback onToggle;
+
+  const PasswordInput({
+    super.key,
+    required this.controller,
+    required this.obscurePassword,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Contraseña:",
+          style: TextStyle(
+            color: AppColors.blackOverlay,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: controller,
+          obscureText: obscurePassword,
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.lock, color: AppColors.primaryRed),
+            suffixIcon: IconButton(
+              icon: Icon(
+                obscurePassword ? Icons.visibility_off : Icons.visibility,
+                color: AppColors.primaryRed,
+              ),
+              onPressed: onToggle,
+            ),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: AppColors.blackOverlay),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: AppColors.blackOverlay, width: 2),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
