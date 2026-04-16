@@ -10,6 +10,7 @@ class PosController extends ChangeNotifier {
 
   List<Map<String, dynamic>> stores = [];
   List<Map<String, dynamic>> customers = [];
+  List<Map<String, dynamic>> paymentMethods = [];
   List<Map<String, dynamic>> products = [];
   List<Map<String, dynamic>> cart = [];
 
@@ -37,6 +38,7 @@ class PosController extends ChangeNotifier {
     try {
       stores = await DatabaseService.getStores();
       customers = await DatabaseService.getCustomers();
+      paymentMethods = await DatabaseService.getPaymentMethods();
       if (stores.isNotEmpty) {
         selectedStoreId ??= (stores.first['id'] as num).toInt();
       }
@@ -159,7 +161,10 @@ class PosController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<int> checkout() async {
+  Future<int> checkout({
+    List<Map<String, dynamic>>? payments,
+    bool isCredit = false,
+  }) async {
     if (selectedStoreId == null) {
       throw Exception('Selecciona un local antes de vender');
     }
@@ -167,9 +172,53 @@ class PosController extends ChangeNotifier {
       throw Exception('Agrega productos al carrito');
     }
 
-    final saleId = await DatabaseService.registerSale(
+    final activeSession = await DatabaseService.getActiveCashSession(
+      selectedStoreId!,
+    );
+
+    if (activeSession == null) {
+      throw Exception('Debes abrir caja en este local antes de vender');
+    }
+
+    final saleTotal = total;
+    final normalizedPayments =
+        (payments == null || payments.isEmpty)
+            ? [
+                {
+                  'method_id': (paymentMethods.firstWhere(
+                    (m) => (m['name'] ?? '').toString().toLowerCase() == 'efectivo',
+                    orElse: () => paymentMethods.first,
+                  )['id'] as num)
+                      .toInt(),
+                  'method_name': 'Efectivo',
+                  'amount': saleTotal,
+                },
+              ]
+            : payments
+                .where(
+                  (p) => ((p['amount'] as num?)?.toDouble() ?? 0) > 0,
+                )
+                .toList();
+
+    final paidAmount = normalizedPayments.fold<double>(
+      0,
+      (sum, payment) => sum + ((payment['amount'] as num).toDouble()),
+    );
+
+    if (!isCredit && (paidAmount - saleTotal).abs() > 0.01) {
+      throw Exception('Los pagos deben sumar exactamente el total');
+    }
+
+    if (isCredit && paidAmount - saleTotal > 0.01) {
+      throw Exception('El abono no puede superar el total de la venta');
+    }
+
+    final saleId = await DatabaseService.registerSaleWithPayments(
       storeId: selectedStoreId!,
       clientId: selectedCustomerId,
+      sessionId: (activeSession['id'] as num).toInt(),
+      isCredit: isCredit,
+      payments: normalizedPayments,
       items: cart
           .map(
             (item) => {

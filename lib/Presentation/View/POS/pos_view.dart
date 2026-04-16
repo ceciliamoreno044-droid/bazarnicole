@@ -1,4 +1,5 @@
 import 'package:bazarnicole/Presentation/Controller/pos_controller.dart';
+import 'package:bazarnicole/Presentation/Renders/responsive_helper.dart';
 import 'package:bazarnicole/Presentation/Utils/Colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,12 +31,186 @@ class _PosViewState extends State<PosView> {
     super.dispose();
   }
 
+  Future<Map<String, dynamic>?> _showPaymentDialog(
+    PosController controller,
+  ) async {
+    final methods = controller.paymentMethods;
+    if (methods.isEmpty) {
+      throw Exception('No hay métodos de pago configurados');
+    }
+
+    final amount1Controller = TextEditingController(
+      text: controller.total.toStringAsFixed(2),
+    );
+    final amount2Controller = TextEditingController(text: '0');
+    int method1 = (methods.first['id'] as num).toInt();
+    int method2 =
+        (methods.length > 1 ? methods[1]['id'] : methods.first['id'] as num)
+            .toInt();
+    bool splitPayment = false;
+    bool isCredit = false;
+
+    return showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text('Cobro de la venta'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total: \$${controller.total.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Dividir pago'),
+                    value: splitPayment,
+                    onChanged: (value) {
+                      setStateDialog(() {
+                        splitPayment = value;
+                        if (!splitPayment) {
+                          amount1Controller.text = controller.total
+                              .toStringAsFixed(2);
+                          amount2Controller.text = '0';
+                        }
+                      });
+                    },
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Venta a crédito'),
+                    subtitle: const Text('Permite abono parcial'),
+                    value: isCredit,
+                    onChanged: (value) {
+                      setStateDialog(() => isCredit = value);
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<int>(
+                    value: method1,
+                    decoration: const InputDecoration(labelText: 'Método 1'),
+                    items: methods
+                        .map(
+                          (m) => DropdownMenuItem<int>(
+                            value: (m['id'] as num).toInt(),
+                            child: Text(m['name'].toString()),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setStateDialog(() => method1 = value);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: amount1Controller,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(labelText: 'Monto 1'),
+                  ),
+                  if (splitPayment) ...[
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<int>(
+                      value: method2,
+                      decoration: const InputDecoration(labelText: 'Método 2'),
+                      items: methods
+                          .map(
+                            (m) => DropdownMenuItem<int>(
+                              value: (m['id'] as num).toInt(),
+                              child: Text(m['name'].toString()),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setStateDialog(() => method2 = value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: amount2Controller,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(labelText: 'Monto 2'),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final a1 =
+                      double.tryParse(amount1Controller.text.trim()) ?? 0;
+                  final a2 =
+                      double.tryParse(amount2Controller.text.trim()) ?? 0;
+                  final selected1 = methods.firstWhere(
+                    (m) => (m['id'] as num).toInt() == method1,
+                  );
+                  final selected2 = methods.firstWhere(
+                    (m) => (m['id'] as num).toInt() == method2,
+                  );
+
+                  final payments = <Map<String, dynamic>>[
+                    {
+                      'method_id': method1,
+                      'method_name': selected1['name'],
+                      'amount': a1,
+                    },
+                    if (splitPayment && a2 > 0)
+                      {
+                        'method_id': method2,
+                        'method_name': selected2['name'],
+                        'amount': a2,
+                      },
+                  ];
+
+                  Navigator.pop(context, {
+                    'payments': payments,
+                    'isCredit': isCredit,
+                  });
+                },
+                child: const Text('Confirmar venta'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _checkout() async {
     final controller = context.read<PosController>();
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      final saleId = await controller.checkout();
+      final paymentData = await _showPaymentDialog(controller);
+      if (paymentData == null) return;
+
+      final saleId = await controller.checkout(
+        payments: List<Map<String, dynamic>>.from(
+          paymentData['payments'] as List,
+        ),
+        isCredit: paymentData['isCredit'] == true,
+      );
+
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(content: Text('Venta registrada correctamente #$saleId')),
@@ -50,6 +225,7 @@ class _PosViewState extends State<PosView> {
 
   @override
   Widget build(BuildContext context) {
+    final appBarHeight = ResponsiveHelper.getAppBarHeight(context);
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.f2): () {
@@ -63,16 +239,55 @@ class _PosViewState extends State<PosView> {
       child: Focus(
         autofocus: true,
         child: Scaffold(
-          appBar: AppBar(
-            title: const Text('POS · Punto de venta'),
-            actions: const [
-              Padding(
-                padding: EdgeInsets.only(right: 16),
-                child: Center(
-                  child: Text('F2 Buscar · F9 Vender · ESC Limpiar'),
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(appBarHeight),
+            child: ClipRRect(
+              clipBehavior: Clip.hardEdge,
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(25),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.blackOverlay,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.blackOverlay, AppColors.blackOverlay],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 5,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: AppBar(
+                  surfaceTintColor: Colors.transparent,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Color(0xfff3ece7),
+                      size: 30,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  title: const Text('POS · Punto de venta'),
+                  actions: const [
+                    Padding(
+                      padding: EdgeInsets.only(right: 16),
+                      child: Center(
+                        child: Text('F2 Buscar · F9 Vender · ESC Limpiar'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
           body: Consumer<PosController>(
             builder: (context, controller, _) {
@@ -231,17 +446,20 @@ class _CatalogPanel extends StatelessWidget {
                   child: controller.isLoading && controller.products.isEmpty
                       ? const Center(child: CircularProgressIndicator())
                       : GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 230,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: 1.15,
-                          ),
+                          gridDelegate:
+                              const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 230,
+                                mainAxisSpacing: 12,
+                                crossAxisSpacing: 12,
+                                childAspectRatio: 1.15,
+                              ),
                           itemCount: controller.products.length,
                           itemBuilder: (context, index) {
                             final product = controller.products[index];
-                            final stock = ((product['stock'] as num?)?.toInt()) ?? 0;
-                            final price = ((product['price'] as num?)?.toDouble()) ?? 0;
+                            final stock =
+                                ((product['stock'] as num?)?.toInt()) ?? 0;
+                            final price =
+                                ((product['price'] as num?)?.toDouble()) ?? 0;
 
                             return FilledButton.tonal(
                               style: FilledButton.styleFrom(
@@ -274,7 +492,9 @@ class _CatalogPanel extends StatelessWidget {
                                   Text(
                                     'Stock: $stock',
                                     style: TextStyle(
-                                      color: stock <= 2 ? Colors.red : Colors.green,
+                                      color: stock <= 2
+                                          ? Colors.red
+                                          : Colors.green,
                                     ),
                                   ),
                                   Text(
@@ -333,11 +553,14 @@ class _CartPanel extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         item['name'].toString(),
-                                        style: const TextStyle(fontWeight: FontWeight.w600),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                       Text(
                                         '\$${(item['price'] as double).toStringAsFixed(2)} c/u',
@@ -391,7 +614,9 @@ class _CartPanel extends StatelessWidget {
                   child: FilledButton.icon(
                     onPressed: controller.cart.isEmpty
                         ? null
-                        : () => context.findAncestorStateOfType<_PosViewState>()?._checkout(),
+                        : () => context
+                              .findAncestorStateOfType<_PosViewState>()
+                              ?._checkout(),
                     icon: const Icon(Icons.sell),
                     label: const Padding(
                       padding: EdgeInsets.symmetric(vertical: 12),
@@ -403,7 +628,9 @@ class _CartPanel extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: controller.cart.isEmpty ? null : controller.clearCart,
+                    onPressed: controller.cart.isEmpty
+                        ? null
+                        : controller.clearCart,
                     icon: const Icon(Icons.delete_sweep_outlined),
                     label: const Text('Vaciar carrito'),
                   ),

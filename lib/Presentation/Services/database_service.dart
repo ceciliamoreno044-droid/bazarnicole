@@ -229,7 +229,8 @@ class DatabaseService {
       path,
       version: 2,
       onCreate: (db, version) async => _ensureBusinessSchema(db),
-      onUpgrade: (db, oldVersion, newVersion) async => _ensureBusinessSchema(db),
+      onUpgrade: (db, oldVersion, newVersion) async =>
+          _ensureBusinessSchema(db),
       onOpen: (db) async => _ensureBusinessSchema(db),
     );
 
@@ -328,6 +329,78 @@ class DatabaseService {
       )
     ''');
 
+    // --- Módulo de Caja ---
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS payment_methods (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        is_cash INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS cash_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        store_id INTEGER NOT NULL,
+        opening_amount REAL NOT NULL DEFAULT 0,
+        closing_amount REAL,
+        opened_at TEXT NOT NULL,
+        closed_at TEXT,
+        status TEXT NOT NULL DEFAULT 'open',
+        FOREIGN KEY (store_id) REFERENCES stores(id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS cash_movements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        amount REAL NOT NULL,
+        method TEXT NOT NULL DEFAULT 'Efectivo',
+        description TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (session_id) REFERENCES cash_sessions(id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS sale_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sale_id INTEGER NOT NULL,
+        method_id INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
+        FOREIGN KEY (method_id) REFERENCES payment_methods(id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS credit_sales (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sale_id INTEGER NOT NULL UNIQUE,
+        total REAL NOT NULL,
+        paid REAL NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'pending',
+        FOREIGN KEY (sale_id) REFERENCES sales(id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS credit_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        credit_sale_id INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        method_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        FOREIGN KEY (credit_sale_id) REFERENCES credit_sales(id),
+        FOREIGN KEY (method_id) REFERENCES payment_methods(id)
+      )
+    ''');
+
+    await _seedPaymentMethods(db);
+
     await _ensureColumn(
       db,
       table: 'products',
@@ -345,12 +418,28 @@ class DatabaseService {
     await _seedCatalog(db);
   }
 
+  static Future<void> _seedPaymentMethods(DatabaseExecutor db) async {
+    const methods = [
+      {'name': 'Efectivo', 'is_cash': 1},
+      {'name': 'Transferencia', 'is_cash': 0},
+      {'name': 'Depósito', 'is_cash': 0},
+      {'name': 'PayPal', 'is_cash': 0},
+      {'name': 'Tarjeta débito', 'is_cash': 0},
+      {'name': 'Crédito', 'is_cash': 0},
+    ];
+    for (final m in methods) {
+      await db.rawInsert(
+        'INSERT OR IGNORE INTO payment_methods (name, is_cash) VALUES (?, ?)',
+        [m['name'], m['is_cash']],
+      );
+    }
+  }
+
   static Future<void> _seedStores(DatabaseExecutor db) async {
     for (final storeName in _storeNames) {
-      await db.rawInsert(
-        'INSERT OR IGNORE INTO stores (name) VALUES (?)',
-        [storeName],
-      );
+      await db.rawInsert('INSERT OR IGNORE INTO stores (name) VALUES (?)', [
+        storeName,
+      ]);
     }
   }
 
@@ -410,9 +499,7 @@ class DatabaseService {
     final info = await db.rawQuery('PRAGMA table_info($table)');
     final exists = info.any((row) => row['name'] == column);
     if (!exists) {
-      await db.execute(
-        'ALTER TABLE $table ADD COLUMN $column $definition',
-      );
+      await db.execute('ALTER TABLE $table ADD COLUMN $column $definition');
     }
   }
 
@@ -420,14 +507,13 @@ class DatabaseService {
     DatabaseExecutor db,
     String? categoryName,
   ) async {
-    final name = _cleanName(categoryName?.isNotEmpty == true
-        ? categoryName!
-        : 'Sin categoría');
-
-    await db.rawInsert(
-      'INSERT OR IGNORE INTO categories (name) VALUES (?)',
-      [name],
+    final name = _cleanName(
+      categoryName?.isNotEmpty == true ? categoryName! : 'Sin categoría',
     );
+
+    await db.rawInsert('INSERT OR IGNORE INTO categories (name) VALUES (?)', [
+      name,
+    ]);
 
     final rows = await db.rawQuery(
       'SELECT id FROM categories WHERE name = ? LIMIT 1',
@@ -764,7 +850,13 @@ class DatabaseService {
       final categoryId = await _ensureCategory(txn, categoryName);
       await txn.rawUpdate(
         'UPDATE products SET name = ?, sku = ?, category_id = ?, price = ? WHERE id = ?',
-        [cleanName, sku.trim().isEmpty ? _buildSku(cleanName) : sku.trim(), categoryId, price < 0 ? 0 : price, productId],
+        [
+          cleanName,
+          sku.trim().isEmpty ? _buildSku(cleanName) : sku.trim(),
+          categoryId,
+          price < 0 ? 0 : price,
+          productId,
+        ],
       );
     });
   }
@@ -810,7 +902,9 @@ class DatabaseService {
     );
   }
 
-  static Future<List<Map<String, dynamic>>> getCustomerHistory(int customerId) async {
+  static Future<List<Map<String, dynamic>>> getCustomerHistory(
+    int customerId,
+  ) async {
     final db = await database;
     return db.rawQuery(
       '''
@@ -852,7 +946,9 @@ class DatabaseService {
     ''');
 
     return {
-      'salesToday': salesToday.isNotEmpty ? salesToday.first : {'sales_count': 0, 'total': 0},
+      'salesToday': salesToday.isNotEmpty
+          ? salesToday.first
+          : {'sales_count': 0, 'total': 0},
       'salesByStore': salesByStore,
       'topProducts': topProducts,
     };
@@ -938,5 +1034,375 @@ class DatabaseService {
     } catch (_) {
       return false;
     }
+  }
+
+  // ─────────────────────────────────────────────
+  // MÉTODOS DE PAGO
+  // ─────────────────────────────────────────────
+
+  static Future<List<Map<String, dynamic>>> getPaymentMethods() async {
+    final db = await database;
+    return db.rawQuery(
+      'SELECT id, name, is_cash FROM payment_methods ORDER BY id',
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // SESIONES DE CAJA (APERTURA / CIERRE)
+  // ─────────────────────────────────────────────
+
+  /// Retorna la sesión activa para el local, o null si está cerrada.
+  static Future<Map<String, dynamic>?> getActiveCashSession(
+    int storeId,
+  ) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      '''
+      SELECT cs.id, cs.store_id, cs.opening_amount, cs.opened_at, cs.status,
+             st.name AS store_name
+      FROM cash_sessions cs
+      JOIN stores st ON st.id = cs.store_id
+      WHERE cs.store_id = ? AND cs.status = 'open'
+      ORDER BY cs.id DESC
+      LIMIT 1
+      ''',
+      [storeId],
+    );
+    return rows.isEmpty ? null : rows.first;
+  }
+
+  /// Abre una nueva sesión de caja.
+  static Future<int> openCashSession({
+    required int storeId,
+    required double openingAmount,
+  }) async {
+    return transaction((txn) async {
+      final existing = await txn.rawQuery(
+        "SELECT id FROM cash_sessions WHERE store_id = ? AND status = 'open' LIMIT 1",
+        [storeId],
+      );
+      if (existing.isNotEmpty) {
+        throw Exception('Ya hay una caja abierta para este local');
+      }
+
+      final sessionId = await txn.rawInsert(
+        '''INSERT INTO cash_sessions (store_id, opening_amount, opened_at, status)
+           VALUES (?, ?, ?, 'open')''',
+        [storeId, openingAmount, DateTime.now().toIso8601String()],
+      );
+
+      // Registrar apertura como movimiento de ingreso
+      await txn.rawInsert(
+        '''INSERT INTO cash_movements (session_id, type, amount, method, description, created_at)
+           VALUES (?, 'income', ?, 'Efectivo', 'Apertura de caja', ?)''',
+        [sessionId, openingAmount, DateTime.now().toIso8601String()],
+      );
+
+      return sessionId;
+    });
+  }
+
+  /// Cierra la sesión de caja activa.
+  static Future<void> closeCashSession({
+    required int sessionId,
+    required double closingAmount,
+  }) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    final updated = await db.rawUpdate(
+      '''UPDATE cash_sessions
+         SET closing_amount = ?, closed_at = ?, status = 'closed'
+         WHERE id = ? AND status = 'open' ''',
+      [closingAmount, now, sessionId],
+    );
+    if (updated == 0) {
+      throw Exception('No se encontró una sesión abierta con ese ID');
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // MOVIMIENTOS DE CAJA
+  // ─────────────────────────────────────────────
+
+  static Future<List<Map<String, dynamic>>> getCashMovements(
+    int sessionId,
+  ) async {
+    final db = await database;
+    return db.rawQuery(
+      '''SELECT id, type, amount, method, description, created_at
+         FROM cash_movements
+         WHERE session_id = ?
+         ORDER BY id ASC''',
+      [sessionId],
+    );
+  }
+
+  static Future<void> addCashMovement({
+    required int sessionId,
+    required String type, // 'income' | 'expense'
+    required double amount,
+    required String method,
+    String? description,
+  }) async {
+    if (amount <= 0) throw Exception('El monto debe ser mayor que cero');
+    if (type != 'income' && type != 'expense') {
+      throw Exception('Tipo de movimiento inválido');
+    }
+    final db = await database;
+    await db.rawInsert(
+      '''INSERT INTO cash_movements (session_id, type, amount, method, description, created_at)
+         VALUES (?, ?, ?, ?, ?, ?)''',
+      [
+        sessionId,
+        type,
+        amount,
+        method,
+        description?.trim(),
+        DateTime.now().toIso8601String(),
+      ],
+    );
+  }
+
+  /// Resumen financiero de la sesión: ingresos, egresos, saldo esperado.
+  static Future<Map<String, dynamic>> getCashSessionSummary(
+    int sessionId,
+  ) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      '''SELECT
+           COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS total_income,
+           COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS total_expense
+         FROM cash_movements
+         WHERE session_id = ?''',
+      [sessionId],
+    );
+    final row = rows.first;
+    final totalIncome = (row['total_income'] as num).toDouble();
+    final totalExpense = (row['total_expense'] as num).toDouble();
+
+    // Desglose por método
+    final byMethod = await db.rawQuery(
+      '''SELECT method,
+           COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
+           COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expense
+         FROM cash_movements
+         WHERE session_id = ?
+         GROUP BY method
+         ORDER BY method''',
+      [sessionId],
+    );
+
+    final balances = await db.rawQuery(
+      '''SELECT
+           COALESCE(SUM(
+             CASE
+               WHEN cm.type = 'income' AND COALESCE(pm.is_cash, 0) = 1 THEN cm.amount
+               WHEN cm.type = 'expense' AND COALESCE(pm.is_cash, 0) = 1 THEN -cm.amount
+               ELSE 0
+             END
+           ), 0) AS physical_cash,
+           COALESCE(SUM(
+             CASE
+               WHEN cm.type = 'income' AND COALESCE(pm.is_cash, 0) = 0 THEN cm.amount
+               WHEN cm.type = 'expense' AND COALESCE(pm.is_cash, 0) = 0 THEN -cm.amount
+               ELSE 0
+             END
+           ), 0) AS virtual_balance
+         FROM cash_movements cm
+         LEFT JOIN payment_methods pm ON lower(pm.name) = lower(cm.method)
+         WHERE cm.session_id = ?''',
+      [sessionId],
+    );
+
+    final balanceRow = balances.first;
+
+    return {
+      'total_income': totalIncome,
+      'total_expense': totalExpense,
+      'expected_balance': totalIncome - totalExpense,
+      'physical_cash': (balanceRow['physical_cash'] as num).toDouble(),
+      'virtual_balance': (balanceRow['virtual_balance'] as num).toDouble(),
+      'by_method': byMethod,
+    };
+  }
+
+  // ─────────────────────────────────────────────
+  // VENTA CON MÚLTIPLES MÉTODOS DE PAGO
+  // ─────────────────────────────────────────────
+
+  /// Registra una venta y sus pagos. Si se proporciona [sessionId],
+  /// también genera movimientos en caja por cada método de pago.
+  static Future<int> registerSaleWithPayments({
+    required int storeId,
+    required List<Map<String, dynamic>> items,
+    required List<Map<String, dynamic>> payments,
+    // [{method_id: int, method_name: String, amount: double}]
+    int? clientId,
+    int? sessionId,
+    bool isCredit = false,
+  }) async {
+    if (items.isEmpty) {
+      throw Exception('La venta debe contener al menos un producto');
+    }
+    if (payments.isEmpty) {
+      throw Exception('Debes indicar al menos un método de pago');
+    }
+
+    return transaction((txn) async {
+      double total = 0;
+
+      for (final item in items) {
+        final productId = item['product_id'] as int;
+        final quantity = (item['quantity'] as num).toInt();
+        final price = (item['price'] as num).toDouble();
+
+        if (quantity <= 0) {
+          throw Exception('La cantidad debe ser mayor que cero');
+        }
+
+        final stockRows = await txn.rawQuery(
+          'SELECT stock FROM inventory WHERE product_id = ? AND store_id = ? LIMIT 1',
+          [productId, storeId],
+        );
+        final available =
+            stockRows.isEmpty ? 0 : (stockRows.first['stock'] as num).toInt();
+        if (available < quantity) {
+          throw Exception('Stock insuficiente para completar la venta');
+        }
+
+        total += quantity * price;
+      }
+
+      final saleId = await txn.rawInsert(
+        'INSERT INTO sales (store_id, client_id, date, total) VALUES (?, ?, ?, ?)',
+        [storeId, clientId, DateTime.now().toIso8601String(), total],
+      );
+
+      // Guardar ítems y reducir stock
+      for (final item in items) {
+        final productId = item['product_id'] as int;
+        final quantity = (item['quantity'] as num).toInt();
+        final price = (item['price'] as num).toDouble();
+
+        await txn.rawInsert(
+          'INSERT INTO sale_items (sale_id, product_id, quantity, price) VALUES (?, ?, ?, ?)',
+          [saleId, productId, quantity, price],
+        );
+        await txn.rawUpdate(
+          'UPDATE inventory SET stock = stock - ? WHERE product_id = ? AND store_id = ?',
+          [quantity, productId, storeId],
+        );
+      }
+
+      // Guardar métodos de pago
+      for (final p in payments) {
+        final methodId = (p['method_id'] as num).toInt();
+        final amount = (p['amount'] as num).toDouble();
+        await txn.rawInsert(
+          'INSERT INTO sale_payments (sale_id, method_id, amount) VALUES (?, ?, ?)',
+          [saleId, methodId, amount],
+        );
+
+        // Registrar ingreso en caja si hay sesión activa
+        if (sessionId != null) {
+          await txn.rawInsert(
+            '''INSERT INTO cash_movements (session_id, type, amount, method, description, created_at)
+               VALUES (?, 'income', ?, ?, ?, ?)''',
+            [
+              sessionId,
+              amount,
+              p['method_name'] ?? 'Efectivo',
+              'Venta #$saleId',
+              DateTime.now().toIso8601String(),
+            ],
+          );
+        }
+      }
+
+      // Venta a crédito
+      if (isCredit) {
+        final paidNow =
+            payments.fold<double>(0, (s, p) => s + (p['amount'] as num));
+        await txn.rawInsert(
+          '''INSERT INTO credit_sales (sale_id, total, paid, status)
+             VALUES (?, ?, ?, ?)''',
+          [
+            saleId,
+            total,
+            paidNow,
+            paidNow >= total ? 'paid' : 'pending',
+          ],
+        );
+      }
+
+      return saleId;
+    });
+  }
+
+  // ─────────────────────────────────────────────
+  // VENTAS A CRÉDITO / ABONOS
+  // ─────────────────────────────────────────────
+
+  static Future<List<Map<String, dynamic>>> getCreditSalesPending() async {
+    final db = await database;
+    return db.rawQuery(
+      '''SELECT cs.id, cs.sale_id, cs.total, cs.paid, cs.status,
+                (cs.total - cs.paid) AS balance,
+                sa.date, sa.store_id, c.name AS client_name,
+                st.name AS store_name
+         FROM credit_sales cs
+         JOIN sales sa ON sa.id = cs.sale_id
+         LEFT JOIN clients c ON c.id = sa.client_id
+         JOIN stores st ON st.id = sa.store_id
+         WHERE cs.status = 'pending'
+         ORDER BY sa.date DESC''',
+    );
+  }
+
+  static Future<void> addCreditPayment({
+    required int creditSaleId,
+    required double amount,
+    required int methodId,
+    int? sessionId,
+    String? methodName,
+  }) async {
+    if (amount <= 0) throw Exception('El abono debe ser mayor que cero');
+    await transaction((txn) async {
+      final rows = await txn.rawQuery(
+        'SELECT total, paid FROM credit_sales WHERE id = ? LIMIT 1',
+        [creditSaleId],
+      );
+      if (rows.isEmpty) throw Exception('Crédito no encontrado');
+
+      final paid = (rows.first['paid'] as num).toDouble();
+      final newPaid = paid + amount;
+
+      await txn.rawInsert(
+        '''INSERT INTO credit_payments (credit_sale_id, amount, method_id, date)
+           VALUES (?, ?, ?, ?)''',
+        [creditSaleId, amount, methodId, DateTime.now().toIso8601String()],
+      );
+
+      await txn.rawUpdate(
+        '''UPDATE credit_sales SET paid = ?,
+           status = CASE WHEN ? >= total THEN 'paid' ELSE 'pending' END
+           WHERE id = ?''',
+        [newPaid, newPaid, creditSaleId],
+      );
+
+      if (sessionId != null) {
+        await txn.rawInsert(
+          '''INSERT INTO cash_movements (session_id, type, amount, method, description, created_at)
+             VALUES (?, 'income', ?, ?, 'Abono crédito', ?)''',
+          [
+            sessionId,
+            amount,
+            methodName ?? 'Efectivo',
+            DateTime.now().toIso8601String(),
+          ],
+        );
+      }
+
+    });
   }
 }

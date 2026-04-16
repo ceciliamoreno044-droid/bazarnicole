@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:bazarnicole/Presentation/Controller/auth_provider.dart';
 import 'package:bazarnicole/Presentation/Controller/product_management_controller.dart';
+import 'package:bazarnicole/Presentation/Controller/cash_controller.dart';
 import 'package:bazarnicole/Presentation/Controller/customers_controller.dart';
 import 'package:bazarnicole/Presentation/Controller/inventory_controller.dart';
 import 'package:bazarnicole/Presentation/Controller/pos_controller.dart';
@@ -198,6 +199,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProductManagementController()),
         ChangeNotifierProvider(create: (_) => InventoryController()),
+        ChangeNotifierProvider(create: (_) => CashController()),
         ChangeNotifierProvider(create: (_) => PosController()),
         ChangeNotifierProvider(create: (_) => CustomersController()),
         ChangeNotifierProvider(create: (_) => ReportsController()),

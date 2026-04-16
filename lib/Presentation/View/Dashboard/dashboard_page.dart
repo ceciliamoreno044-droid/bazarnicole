@@ -22,6 +22,7 @@ class _DashboardPageState extends State<DashboardPage> {
     'Inventario': AppRoutes.inventory,
     'Productos': AppRoutes.products,
     'Clientes': AppRoutes.customers,
+    'Caja': AppRoutes.cash,
     'Reportes': AppRoutes.reports,
   };
 
@@ -236,6 +237,8 @@ class _DashboardPageState extends State<DashboardPage> {
         return Icons.storefront_outlined;
       case 'Clientes':
         return Icons.groups_2_outlined;
+      case 'Caja':
+        return Icons.account_balance_wallet_outlined;
       case 'Reportes':
         return Icons.bar_chart_outlined;
       default:

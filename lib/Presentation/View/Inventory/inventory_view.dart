@@ -1,4 +1,6 @@
 import 'package:bazarnicole/Presentation/Controller/inventory_controller.dart';
+import 'package:bazarnicole/Presentation/Renders/responsive_helper.dart';
+import 'package:bazarnicole/Presentation/Utils/Colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -75,10 +77,12 @@ class _InventoryViewState extends State<InventoryView> {
 
     final qtyController = TextEditingController(text: '1');
     int fromStoreId = controller.selectedStoreId!;
-    int toStoreId = (controller.stores.firstWhere(
-      (store) => (store['id'] as num).toInt() != fromStoreId,
-    )['id'] as num)
-        .toInt();
+    int toStoreId =
+        (controller.stores.firstWhere(
+                  (store) => (store['id'] as num).toInt() != fromStoreId,
+                )['id']
+                as num)
+            .toInt();
 
     await showDialog<void>(
       context: context,
@@ -110,10 +114,14 @@ class _InventoryViewState extends State<InventoryView> {
                       setDialogState(() {
                         fromStoreId = value;
                         if (toStoreId == fromStoreId) {
-                          toStoreId = (controller.stores.firstWhere(
-                            (store) => (store['id'] as num).toInt() != fromStoreId,
-                          )['id'] as num)
-                              .toInt();
+                          toStoreId =
+                              (controller.stores.firstWhere(
+                                        (store) =>
+                                            (store['id'] as num).toInt() !=
+                                            fromStoreId,
+                                      )['id']
+                                      as num)
+                                  .toInt();
                         }
                       });
                     },
@@ -127,7 +135,8 @@ class _InventoryViewState extends State<InventoryView> {
                     ),
                     items: controller.stores
                         .where(
-                          (store) => (store['id'] as num).toInt() != fromStoreId,
+                          (store) =>
+                              (store['id'] as num).toInt() != fromStoreId,
                         )
                         .map((store) {
                           final id = (store['id'] as num).toInt();
@@ -173,7 +182,9 @@ class _InventoryViewState extends State<InventoryView> {
                       if (!mounted) return;
                       navigator.pop();
                       messenger.showSnackBar(
-                        const SnackBar(content: Text('Transferencia registrada')),
+                        const SnackBar(
+                          content: Text('Transferencia registrada'),
+                        ),
                       );
                     } catch (e) {
                       if (!mounted) return;
@@ -198,8 +209,65 @@ class _InventoryViewState extends State<InventoryView> {
 
   @override
   Widget build(BuildContext context) {
+    final appBarHeight = ResponsiveHelper.getAppBarHeight(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Inventario por local')),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(appBarHeight),
+        child: ClipRRect(
+          clipBehavior: Clip.hardEdge,
+          borderRadius: const BorderRadius.vertical(
+            bottom: Radius.circular(25),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.blackOverlay,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.blackOverlay, AppColors.blackOverlay],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 5,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: AppBar(
+              surfaceTintColor: Colors.transparent,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: AppColors.whiteOverlay,
+                  size: 30,
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(48),
+                child: Theme(
+                  data: Theme.of(
+                    context,
+                  ).copyWith(dividerColor: Colors.transparent),
+                  child: Text(
+                    'Inventario por local',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.whiteOverlay,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: Consumer<InventoryController>(
         builder: (context, controller, _) {
           final selectedStoreId = controller.selectedStoreId;
@@ -258,9 +326,18 @@ class _InventoryViewState extends State<InventoryView> {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    _SummaryCard(title: 'Productos', value: controller.totalProducts.toString()),
-                    _SummaryCard(title: 'Unidades', value: controller.totalUnits.toString()),
-                    _SummaryCard(title: 'Bajo stock', value: controller.lowStockCount.toString()),
+                    _SummaryCard(
+                      title: 'Productos',
+                      value: controller.totalProducts.toString(),
+                    ),
+                    _SummaryCard(
+                      title: 'Unidades',
+                      value: controller.totalUnits.toString(),
+                    ),
+                    _SummaryCard(
+                      title: 'Bajo stock',
+                      value: controller.lowStockCount.toString(),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -276,50 +353,60 @@ class _InventoryViewState extends State<InventoryView> {
                   child: controller.isLoading && controller.inventory.isEmpty
                       ? const Center(child: CircularProgressIndicator())
                       : controller.inventory.isEmpty
-                          ? const Center(child: Text('No hay productos para este local'))
-                          : ListView.separated(
-                              itemCount: controller.inventory.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 8),
-                              itemBuilder: (context, index) {
-                                final item = controller.inventory[index];
-                                final stock = ((item['stock'] as num?)?.toInt() ?? 0);
-                                final stockColor = stock <= 2 ? Colors.red : Colors.green;
+                      ? const Center(
+                          child: Text('No hay productos para este local'),
+                        )
+                      : ListView.separated(
+                          itemCount: controller.inventory.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final item = controller.inventory[index];
+                            final stock =
+                                ((item['stock'] as num?)?.toInt() ?? 0);
+                            final stockColor = stock <= 2
+                                ? Colors.red
+                                : Colors.green;
 
-                                return Card(
-                                  child: ListTile(
-                                    title: Text(item['name']?.toString() ?? ''),
-                                    subtitle: Text(
-                                      'SKU: ${item['sku']} · Categoría: ${item['category']}',
-                                    ),
-                                    leading: CircleAvatar(
-                                      backgroundColor: stockColor.withValues(alpha: 0.15),
-                                      child: Text(
-                                        stock.toString(),
-                                        style: TextStyle(
-                                          color: stockColor,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    trailing: Wrap(
-                                      spacing: 8,
-                                      children: [
-                                        IconButton(
-                                          tooltip: 'Editar stock',
-                                          onPressed: () => _showEditStockDialog(item),
-                                          icon: const Icon(Icons.edit_outlined),
-                                        ),
-                                        IconButton(
-                                          tooltip: 'Transferir',
-                                          onPressed: () => _showTransferDialog(item),
-                                          icon: const Icon(Icons.swap_horiz),
-                                        ),
-                                      ],
+                            return Card(
+                              child: ListTile(
+                                title: Text(item['name']?.toString() ?? ''),
+                                subtitle: Text(
+                                  'SKU: ${item['sku']} · Categoría: ${item['category']}',
+                                ),
+                                leading: CircleAvatar(
+                                  backgroundColor: stockColor.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                  child: Text(
+                                    stock.toString(),
+                                    style: TextStyle(
+                                      color: stockColor,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                );
-                              },
-                            ),
+                                ),
+                                trailing: Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    IconButton(
+                                      tooltip: 'Editar stock',
+                                      onPressed: () =>
+                                          _showEditStockDialog(item),
+                                      icon: const Icon(Icons.edit_outlined),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Transferir',
+                                      onPressed: () =>
+                                          _showTransferDialog(item),
+                                      icon: const Icon(Icons.swap_horiz),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                 ),
               ],
             ),
@@ -348,7 +435,10 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 12, color: Colors.black54),
+          ),
           const SizedBox(height: 4),
           Text(
             value,

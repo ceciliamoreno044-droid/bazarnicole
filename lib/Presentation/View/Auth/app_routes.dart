@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bazarnicole/Presentation/View/Login/Login.dart';
 import 'package:bazarnicole/Presentation/View/Customers/customers_view.dart';
+import 'package:bazarnicole/Presentation/View/Cash/cash_view.dart';
 import 'package:bazarnicole/Presentation/View/Dashboard/dashboard_page.dart';
 import 'package:bazarnicole/Presentation/View/Inventory/inventory_view.dart';
 import 'package:bazarnicole/Presentation/View/POS/pos_view.dart';
@@ -21,6 +22,7 @@ class AppRoutes {
   static const inventory = '/inventory';
   static const customers = '/customers';
   static const reports = '/reports';
+  static const cash = '/cash';
 
   /// Todas las rutas registradas
   static final routes = <String, WidgetBuilder>{
@@ -31,6 +33,7 @@ class AppRoutes {
     inventory: (context) => const InventoryView(),
     customers: (context) => const CustomersView(),
     reports: (context) => const ReportsView(),
+    cash: (context) => const CashView(),
   };
 
   /// Map de roles con rutas permitidas
@@ -46,6 +49,7 @@ class AppRoutes {
       inventory,
       customers,
       reports,
+      cash,
     ],
     'cajero': [
       login,
