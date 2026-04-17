@@ -307,7 +307,11 @@ class _UserFormDialogState extends State<_UserFormDialog> {
     _lastnameCtrl = TextEditingController(text: widget.user?.lastname ?? '');
     _emailCtrl = TextEditingController(text: widget.user?.email ?? '');
     _passCtrl = TextEditingController();
-    _selectedRole = widget.user?.role ?? UserRoles.cajero;
+    // Normalizar roles antiguos ('admin') a los valores actuales
+    final rawRole = widget.user?.role ?? UserRoles.cajero;
+    _selectedRole = UserRoles.all.contains(rawRole)
+        ? rawRole
+        : (rawRole == 'admin' ? UserRoles.administrador : UserRoles.cajero);
   }
 
   @override
@@ -400,19 +404,9 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                 items: UserRoles.all
                     .map((r) => DropdownMenuItem(
                           value: r,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(UserRoles.label(r)),
-                              Text(
-                                UserRoles.description(r),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            '${UserRoles.label(r)} — ${UserRoles.description(r)}',
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ))
                     .toList(),

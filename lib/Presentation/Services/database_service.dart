@@ -7,6 +7,14 @@ import 'package:sqflite/sqflite.dart';
 import 'backup_service.dart';
 import 'database_location_service.dart';
 
+/// Genera un ID de 20 caracteres aleatorios estilo Firebase (letras y números).
+String generateFirebaseId() {
+  const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  final rng = Random.secure();
+  return List.generate(20, (_) => chars[rng.nextInt(chars.length)]).join();
+}
+
 /// Servicio principal para manejar la conexión con SQLite.
 /// Mantiene un único sistema con múltiples locales compartiendo la misma base.
 class DatabaseService {
@@ -575,7 +583,7 @@ class DatabaseService {
     final count = await db.rawQuery('SELECT COUNT(*) as c FROM users');
     final total = (count.first['c'] as num).toInt();
     if (total == 0) {
-      final uid = 'admin_${DateTime.now().millisecondsSinceEpoch}';
+      final uid = generateFirebaseId();
       await db.rawInsert(
         '''INSERT OR IGNORE INTO users (uid, email, password, name, lastname, role, is_active, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',

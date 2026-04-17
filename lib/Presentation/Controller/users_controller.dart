@@ -48,7 +48,7 @@ class UsersController extends ChangeNotifier {
         return 'Ya existe un usuario con ese correo.';
       }
 
-      final uid = 'user_${DateTime.now().millisecondsSinceEpoch}';
+      final uid = generateFirebaseId();
       await DatabaseService.rawInsert(
         '''INSERT INTO users (uid, email, password, name, lastname, role, is_active, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',

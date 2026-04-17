@@ -1,5 +1,7 @@
 import 'package:bazarnicole/Presentation/Services/database_service.dart';
 import 'package:bazarnicole/Presentation/Services/session_service.dart';
+export 'package:bazarnicole/Presentation/Services/database_service.dart'
+    show generateFirebaseId;
 
 class AuthService {
   /// Login con verificación en SQLite y guardado de sesión
@@ -62,8 +64,8 @@ class AuthService {
         return null;
       }
 
-      // Generar un UID único (en un sistema real sería más seguro)
-      final uid = 'user_${DateTime.now().millisecondsSinceEpoch}';
+      // Generar un UID único estilo Firebase (20 caracteres aleatorios seguros)
+      final uid = generateFirebaseId();
 
       // Insertar usuario en la base de datos
       final result = await DatabaseService.rawInsert(

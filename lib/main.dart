@@ -64,6 +64,12 @@ Future<void> main() async {
   // 🗄️ INICIALIZAR BASE DE DATOS DE FORMA SEGURA
   await _initDatabaseSafely();
 
+  // 🌐 En web, mostrar el catálogo público directamente
+  if (kIsWeb) {
+    runApp(MyApp(initialRoute: AppRoutes.catalog));
+    return;
+  }
+
   try {
     // Verificar si hay sesión activa
     final authService = AuthService();

@@ -10,6 +10,8 @@ import 'package:bazarnicole/Presentation/View/Purchases/purchases_view.dart';
 import 'package:bazarnicole/Presentation/View/Reports/reports_view.dart';
 import 'package:bazarnicole/Presentation/View/Users/users_view.dart';
 import 'package:bazarnicole/Presentation/View/Suppliers/suppliers_view.dart';
+import 'package:bazarnicole/Presentation/admin/AdminDBPage.dart';
+import 'package:bazarnicole/Presentation/View/Catalog/web_catalog_view.dart';
 
 class AppRoutes {
   // --- Rutas Públicas ---
@@ -29,6 +31,8 @@ class AppRoutes {
   static const cash = '/cash';
   static const users = '/users';
   static const suppliers = '/suppliers';
+  static const adminDb = '/admin-db';
+  static const catalog = '/catalog';
 
   /// Todas las rutas registradas
   static final routes = <String, WidgetBuilder>{
@@ -43,6 +47,8 @@ class AppRoutes {
     cash: (context) => const CashView(),
     users: (context) => const UsersView(),
     suppliers: (context) => const SuppliersView(),
+    adminDb: (context) => const AdminDBPage(),
+    catalog: (context) => const WebCatalogView(),
   };
 
   /// Map de roles con rutas permitidas
@@ -63,6 +69,7 @@ class AppRoutes {
       cash,
       users,
       suppliers,
+      adminDb,
     ],
     // Administrador: sin gestión de usuarios
     'administrador': [
@@ -96,6 +103,7 @@ class AppRoutes {
       cash,
       users,
       suppliers,
+      adminDb,
     ],
   };
 

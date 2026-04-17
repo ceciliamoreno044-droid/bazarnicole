@@ -10,7 +10,7 @@ class AppColors {
 
   static const Color primaryBlue = Color(0xFF2770B0); // #2770b0
   static const Color darkGray = Color(0xFF404042); // #404042
-  //static const Color primaryRed = Color(0xFFFF1100); // #FF1100
+  static const Color primaryRed = Color(0xFFFF1100); // #FF1100
   static const Color blackOverlay = Color(0xFF22282d);
   static const Color greyOverlay = Color(0xFFb4b4b4);
   static const Color whiteOverlay = Color(0xFFFFFFFF);

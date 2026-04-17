@@ -27,6 +27,7 @@ class _DashboardPageState extends State<DashboardPage> {
     'Reportes': AppRoutes.reports,
     'Usuarios': AppRoutes.users,
     'Proveedores': AppRoutes.suppliers,
+    'Admin DB': AppRoutes.adminDb,
   };
 
   @override
@@ -151,6 +152,21 @@ class _DashboardPageState extends State<DashboardPage> {
           UserAccountsDrawerHeader(
             accountName: Text(_currentUser?['name'] ?? 'Usuario'),
             accountEmail: Text(_currentUser?['email'] ?? 'email@correo.com'),
+            otherAccountsPictures: [
+              Chip(
+                label: Text(
+                  _currentUser?['role'] ?? 'user',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                backgroundColor: Colors.black26,
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
             decoration: BoxDecoration(color: AppColors.primaryLogo),
           ),
           ListTile(
@@ -250,6 +266,8 @@ class _DashboardPageState extends State<DashboardPage> {
         return Icons.manage_accounts_outlined;
       case 'Proveedores':
         return Icons.local_shipping_outlined;
+      case 'Admin DB':
+        return Icons.admin_panel_settings_outlined;
       default:
         return Icons.help_outline;
     }
