@@ -536,6 +536,36 @@ class DatabaseService {
       definition: "TEXT NOT NULL DEFAULT ''",
     );
 
+    // Migración: quién abre la caja
+    await _ensureColumn(
+      db,
+      table: 'cash_sessions',
+      column: 'opened_by',
+      definition: 'INTEGER',
+    );
+    await _ensureColumn(
+      db,
+      table: 'cash_sessions',
+      column: 'opened_by_name',
+      definition: "TEXT NOT NULL DEFAULT ''",
+    );
+
+    // Migración: tabla de desglose de denominaciones al abrir/cerrar caja
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS cash_denominations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id INTEGER NOT NULL,
+        value REAL NOT NULL,
+        label TEXT NOT NULL,
+        is_coin INTEGER NOT NULL DEFAULT 0,
+        quantity INTEGER NOT NULL DEFAULT 0,
+        subtotal REAL NOT NULL DEFAULT 0,
+        moment TEXT NOT NULL DEFAULT 'open',
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (session_id) REFERENCES cash_sessions(id) ON DELETE CASCADE
+      )
+    ''');
+
     await _seedStores(db);
     await _seedCatalog(db);
   }
@@ -1410,6 +1440,7 @@ class DatabaseService {
     final rows = await db.rawQuery(
       '''
       SELECT cs.id, cs.store_id, cs.opening_amount, cs.opened_at, cs.status,
+             cs.opened_by, cs.opened_by_name,
              st.name AS store_name
       FROM cash_sessions cs
       JOIN stores st ON st.id = cs.store_id
@@ -1426,6 +1457,8 @@ class DatabaseService {
   static Future<int> openCashSession({
     required int storeId,
     required double openingAmount,
+    int? openedBy,
+    String openedByName = '',
   }) async {
     return transaction((txn) async {
       final existing = await txn.rawQuery(
@@ -1437,9 +1470,9 @@ class DatabaseService {
       }
 
       final sessionId = await txn.rawInsert(
-        '''INSERT INTO cash_sessions (store_id, opening_amount, opened_at, status)
-           VALUES (?, ?, ?, 'open')''',
-        [storeId, openingAmount, DateTime.now().toIso8601String()],
+        '''INSERT INTO cash_sessions (store_id, opening_amount, opened_at, status, opened_by, opened_by_name)
+           VALUES (?, ?, ?, 'open', ?, ?)''',
+        [storeId, openingAmount, DateTime.now().toIso8601String(), openedBy, openedByName],
       );
 
       // Registrar apertura como movimiento de ingreso
@@ -1575,6 +1608,140 @@ class DatabaseService {
       'virtual_balance': (balanceRow['virtual_balance'] as num).toDouble(),
       'by_method': byMethod,
     };
+  }
+
+  // ─────────────────────────────────────────────
+  // DENOMINACIONES DE CAJA (billetes / monedas)
+  // ─────────────────────────────────────────────
+
+  /// Guarda el desglose de denominaciones para una sesión.
+  /// [moment]: 'open' al abrir, 'close' al cerrar.
+  static Future<void> saveCashDenominations({
+    required int sessionId,
+    required List<Map<String, dynamic>> entries, // toMap() de cada DenominationEntry
+    required String moment,
+  }) async {
+    final db = await database;
+    final batch = db.batch();
+    // Elimina registros previos del mismo momento para evitar duplicados
+    batch.delete(
+      'cash_denominations',
+      where: 'session_id = ? AND moment = ?',
+      whereArgs: [sessionId, moment],
+    );
+    for (final e in entries) {
+      if ((e['quantity'] as int) > 0) {
+        batch.insert('cash_denominations', {
+          'session_id': sessionId,
+          'value': e['value'],
+          'label': e['label'],
+          'is_coin': e['is_coin'],
+          'quantity': e['quantity'],
+          'subtotal': e['subtotal'],
+          'moment': moment,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      }
+    }
+    await batch.commit(noResult: true);
+  }
+
+  /// Recupera el desglose de denominaciones de una sesión y momento.
+  static Future<List<Map<String, dynamic>>> getCashDenominations({
+    required int sessionId,
+    required String moment,
+  }) async {
+    final db = await database;
+    return db.rawQuery(
+      '''SELECT value, label, is_coin, quantity, subtotal
+         FROM cash_denominations
+         WHERE session_id = ? AND moment = ?
+         ORDER BY is_coin ASC, value DESC''',
+      [sessionId, moment],
+    );
+  }
+
+  /// Suma total de billetes y monedas guardados para un momento.
+  static Future<Map<String, double>> getCashDenominationTotals({
+    required int sessionId,
+    required String moment,
+  }) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      '''SELECT
+           COALESCE(SUM(CASE WHEN is_coin = 0 THEN subtotal ELSE 0 END), 0) AS total_bills,
+           COALESCE(SUM(CASE WHEN is_coin = 1 THEN subtotal ELSE 0 END), 0) AS total_coins
+         FROM cash_denominations
+         WHERE session_id = ? AND moment = ?''',
+      [sessionId, moment],
+    );
+    final row = rows.first;
+    return {
+      'total_bills': (row['total_bills'] as num).toDouble(),
+      'total_coins': (row['total_coins'] as num).toDouble(),
+    };
+  }
+
+  // ─────────────────────────────────────────────
+  // HISTORIAL DE SESIONES DE CAJA
+  // ─────────────────────────────────────────────
+
+  /// Devuelve sesiones cerradas de un local.
+  /// Filtros opcionales (se pasan como strings ya formateados):
+  ///   [yearFilter]  → '2026'
+  ///   [monthFilter] → '2026-04'
+  ///   [weekFilter]  → '2026-15'  (año-semana ISO)
+  static Future<List<Map<String, dynamic>>> getCashSessionHistory(
+    int storeId, {
+    String? yearFilter,
+    String? monthFilter,
+    String? weekFilter,
+  }) async {
+    final db = await database;
+    String where = "cs.store_id = ? AND cs.status = 'closed'";
+    final args = <dynamic>[storeId];
+
+    if (weekFilter != null) {
+      where += " AND strftime('%Y-%W', cs.opened_at) = ?";
+      args.add(weekFilter);
+    } else if (monthFilter != null) {
+      where += " AND strftime('%Y-%m', cs.opened_at) = ?";
+      args.add(monthFilter);
+    } else if (yearFilter != null) {
+      where += " AND strftime('%Y', cs.opened_at) = ?";
+      args.add(yearFilter);
+    }
+
+    return db.rawQuery(
+      '''
+      SELECT cs.id, cs.opening_amount, cs.closing_amount,
+             cs.opened_at, cs.closed_at,
+             COALESCE(cs.opened_by_name, '') AS opened_by_name,
+             st.name AS store_name,
+             COALESCE(SUM(CASE WHEN cm.type = 'income' THEN cm.amount ELSE 0 END), 0) AS total_income,
+             COALESCE(SUM(CASE WHEN cm.type = 'expense' THEN cm.amount ELSE 0 END), 0) AS total_expense
+      FROM cash_sessions cs
+      JOIN stores st ON st.id = cs.store_id
+      LEFT JOIN cash_movements cm ON cm.session_id = cs.id
+      WHERE $where
+      GROUP BY cs.id
+      ORDER BY cs.opened_at DESC
+      ''',
+      args,
+    );
+  }
+
+  /// Devuelve los años distintos en que hubo sesiones cerradas para un local.
+  static Future<List<String>> getCashSessionYears(int storeId) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      '''SELECT DISTINCT strftime('%Y', opened_at) AS year
+         FROM cash_sessions
+         WHERE store_id = ? AND status = 'closed'
+         ORDER BY year DESC''',
+      [storeId],
+    );
+    return rows.map((r) => r['year'] as String).toList();
   }
 
   // ─────────────────────────────────────────────

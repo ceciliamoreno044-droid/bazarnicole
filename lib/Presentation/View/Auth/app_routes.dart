@@ -9,7 +9,6 @@ import 'package:bazarnicole/Presentation/View/Product/product_management_view.da
 import 'package:bazarnicole/Presentation/View/Purchases/purchases_view.dart';
 import 'package:bazarnicole/Presentation/View/Reports/reports_view.dart';
 import 'package:bazarnicole/Presentation/View/Users/users_view.dart';
-import 'package:bazarnicole/Presentation/View/Users/cajeros_view.dart';
 import 'package:bazarnicole/Presentation/View/Suppliers/suppliers_view.dart';
 
 class AppRoutes {
@@ -29,7 +28,6 @@ class AppRoutes {
   static const reports = '/reports';
   static const cash = '/cash';
   static const users = '/users';
-  static const cajeros = '/cajeros';
   static const suppliers = '/suppliers';
 
   /// Todas las rutas registradas
@@ -44,12 +42,45 @@ class AppRoutes {
     reports: (context) => const ReportsView(),
     cash: (context) => const CashView(),
     users: (context) => const UsersView(),
-    cajeros: (context) => const CajerosView(),
     suppliers: (context) => const SuppliersView(),
   };
 
   /// Map de roles con rutas permitidas
   static final Map<String, List<String>> allowedRoutesByRole = {
+    // Admin Superior: acceso total
+    'admin_superior': [
+      login,
+      register,
+      authenticate,
+      contracts,
+      dashboard,
+      pos,
+      products,
+      purchases,
+      inventory,
+      customers,
+      reports,
+      cash,
+      users,
+      suppliers,
+    ],
+    // Administrador: sin gestión de usuarios
+    'administrador': [
+      login,
+      authenticate,
+      dashboard,
+      pos,
+      products,
+      purchases,
+      inventory,
+      customers,
+      reports,
+      cash,
+      suppliers,
+    ],
+    // Cajero: solo ventas
+    'cajero': [login, authenticate, dashboard, pos, customers, cash],
+    // Compatibilidad con rol 'admin' antiguo
     'admin': [
       login,
       register,
@@ -64,28 +95,8 @@ class AppRoutes {
       reports,
       cash,
       users,
-      cajeros,
       suppliers,
     ],
-    'cajero': [login, authenticate, dashboard, pos, customers],
-    'bodega': [
-      login,
-      authenticate,
-      dashboard,
-      products,
-      purchases,
-      inventory,
-      suppliers,
-    ],
-    'Inventario': [
-      login,
-      authenticate,
-      dashboard,
-      products,
-      purchases,
-      inventory,
-    ],
-    'Reportes': [login, authenticate, dashboard, reports],
   };
 
   /// Obtiene las rutas permitidas para un rol específico
