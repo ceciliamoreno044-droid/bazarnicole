@@ -1,5 +1,6 @@
 import 'package:bazarnicole/Presentation/Template/catalog_template.dart';
 import 'package:bazarnicole/Presentation/Utils/Colors.dart';
+import 'package:bazarnicole/Presentation/Widgets/catalog_card_widget.dart';
 import 'package:flutter/material.dart';
 
 /// Vista pública del catálogo — solo para web.
@@ -153,45 +154,6 @@ class _CatalogGrid extends StatelessWidget {
     required this.isWide,
   });
 
-  IconData _iconForCategory(String category) {
-    final c = category.toLowerCase();
-    if (c.contains('cuaderno') || c.contains('hoja') || c.contains('agenda')) {
-      return Icons.menu_book_outlined;
-    }
-    if (c.contains('lápiz') || c.contains('esfero') || c.contains('lapicero')) {
-      return Icons.edit_outlined;
-    }
-    if (c.contains('tijera') || c.contains('silicona') || c.contains('pegamento')) {
-      return Icons.content_cut_outlined;
-    }
-    if (c.contains('mochila') || c.contains('lonchera')) {
-      return Icons.backpack_outlined;
-    }
-    if (c.contains('cartera') || c.contains('billetera')) {
-      return Icons.wallet_outlined;
-    }
-    if (c.contains('perfume') || c.contains('desodorante')) {
-      return Icons.spa_outlined;
-    }
-    if (c.contains('juguete') || c.contains('pelota') || c.contains('peluche')) {
-      return Icons.toys_outlined;
-    }
-    if (c.contains('audífono') || c.contains('bluetooth')) {
-      return Icons.headphones_outlined;
-    }
-    if (c.contains('vela') || c.contains('lámpara')) {
-      return Icons.light_outlined;
-    }
-    if (c.contains('joyería') || c.contains('lazo') || c.contains('vincha')) {
-      return Icons.diamond_outlined;
-    }
-    if (c.contains('calculadora')) return Icons.calculate_outlined;
-    if (c.contains('pila')) return Icons.battery_charging_full_outlined;
-    return store == CatalogStore.bazar
-        ? Icons.shopping_bag_outlined
-        : Icons.school_outlined;
-  }
-
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
@@ -208,75 +170,28 @@ class _CatalogGrid extends StatelessWidget {
     }
 
     final crossCount = isWide ? 4 : 2;
+    // Las cards son más altas para mostrar imagen + descripción
+    final childAspectRatio = isWide ? 0.72 : 0.65;
 
     return GridView.builder(
       padding: EdgeInsets.all(isWide ? 32 : 16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossCount,
-        mainAxisSpacing: 14,
-        crossAxisSpacing: 14,
-        childAspectRatio: 1.0,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: childAspectRatio,
       ),
       itemCount: items.length,
       itemBuilder: (context, i) {
         final name = items[i];
-        return _CategoryCard(
+        final info = WebCatalog.infoFor(name, store);
+        return CatalogCategoryCard(
           name: name,
-          icon: _iconForCategory(name),
           store: store,
+          info: info,
         );
       },
     );
   }
 }
 
-class _CategoryCard extends StatelessWidget {
-  final String name;
-  final IconData icon;
-  final CatalogStore store;
-
-  const _CategoryCard({
-    required this.name,
-    required this.icon,
-    required this.store,
-  });
-
-  Color get _accentColor =>
-      store == CatalogStore.bazar ? AppColors.primaryBlue : const Color(0xFF2E7D32);
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () {}, // reservado para futuras acciones
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                backgroundColor: _accentColor.withOpacity(0.12),
-                radius: 28,
-                child: Icon(icon, size: 28, color: _accentColor),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                name,
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
