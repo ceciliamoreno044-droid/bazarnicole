@@ -57,7 +57,7 @@ class _AuthenticatedClient extends http.BaseClient {
 /// Servicio para exportar la base de datos a JSON y subir a Google Drive.
 class GoogleDriveBackupService {
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [drive.DriveApi.driveFileScope],
+    scopes: [drive.DriveApi.driveScope],
   );
 
   static GoogleSignInAccount? _currentUser;

@@ -31,17 +31,60 @@ enum CatalogStore {
   const CatalogStore(this.label, this.description);
 }
 
-/// Información de categoría: descripción, imagen de portada y etiquetas.
+/// Producto real cargado desde Drive (dato mínimo para el catálogo público).
+class CatalogProductEntry {
+  final int id;
+  final String name;
+  final String sku;
+  final double price;
+  final int stock;
+
+  const CatalogProductEntry({
+    required this.id,
+    required this.name,
+    required this.sku,
+    required this.price,
+    required this.stock,
+  });
+}
+
+/// Información de categoría: descripción, imagen de portada, etiquetas y
+/// (opcionalmente) productos reales cargados desde Drive.
 class CategoryInfo {
   final String description;
   final String imageUrl;
   final List<String> tags;
 
+  /// Productos reales de esta categoría (cargados desde Drive).
+  /// Lista vacía cuando aún no se ha cargado el Drive.
+  final List<CatalogProductEntry> products;
+
   const CategoryInfo({
     required this.description,
     required this.imageUrl,
     this.tags = const [],
+    this.products = const [],
   });
+
+  /// Crea una copia con los productos reales inyectados desde Drive.
+  CategoryInfo withProducts(List<CatalogProductEntry> realProducts) {
+    return CategoryInfo(
+      description: description,
+      imageUrl: imageUrl,
+      tags: tags,
+      products: realProducts,
+    );
+  }
+
+  /// Crea una copia con una nueva URL de imagen (de Drive).
+  CategoryInfo withImageUrl(String url) {
+    return CategoryInfo(
+      description: description,
+      imageUrl: url,
+      tags: tags,
+      products: products,
+    );
+  }
 }
 
 /// Catálogo estático para la vista web pública.
@@ -186,7 +229,7 @@ class WebCatalog {
       description:
           'Velas aromáticas artesanales en cera de soya y parafina. Aromas relajantes para el hogar: lavanda, vainilla, canela y más.',
       imageUrl:
-          'https://images.unsplash.com/photo-1602607144011-c6239039803a?w=600',
+          'https://images.unsplash.com/photo-1603905988457-81e9a680f6df?w=600',
       tags: ['Aromas', 'Relajación', 'Hogar'],
     ),
     'Cajas para obsequios': CategoryInfo(
@@ -200,7 +243,7 @@ class WebCatalog {
       description:
           'Espejos de mano, de bolsillo y de pared con marcos decorativos. Imprescindibles para tu tocador y para decorar espacios.',
       imageUrl:
-          'https://images.unsplash.com/photo-1596447594408-467e6e8cfe72?w=600',
+          'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=600',
       tags: ['Belleza', 'Decoración', 'Hogar'],
     ),
     'Uñas postizas': CategoryInfo(
@@ -221,14 +264,14 @@ class WebCatalog {
       description:
           'Pestañas postizas de pelo natural y sintético. Desde looks naturales hasta dramáticos para ocasiones especiales.',
       imageUrl:
-          'https://images.unsplash.com/photo-1583241800698-e8ab01830a22?w=600',
+          'https://images.unsplash.com/photo-1617897903246-719242758050?w=600',
       tags: ['Maquillaje', 'Belleza', 'Ojos'],
     ),
     'Llaveros': CategoryInfo(
       description:
           'Llaveros personalizados, de personajes, metálicos y de cuero. El detalle perfecto para regalar o para ti mismo.',
       imageUrl:
-          'https://images.unsplash.com/photo-1634577153016-a646ad01f0d0?w=600',
+          'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600',
       tags: ['Accesorio', 'Regalo', 'Personalizado'],
     ),
     'Brochas para maquillaje': CategoryInfo(

@@ -18,12 +18,13 @@ class CatalogCategoryCard extends StatelessWidget {
 
   Color get _accentColor =>
       store == CatalogStore.bazar
-          ? AppColors.primaryBlue
+          ? AppColors.blackOverlay
           : const Color(0xFF2E7D32);
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: AppColors.whiteOverlay,
       elevation: 4,
       shadowColor: _accentColor.withOpacity(0.25),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
