@@ -267,12 +267,22 @@ class DatabaseService {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT,
         name TEXT NOT NULL,
         sku TEXT NOT NULL UNIQUE,
+        aux_code TEXT,
+        description TEXT,
+        tags TEXT,
         category_id INTEGER,
+        store_id INTEGER,
         price REAL NOT NULL DEFAULT 0,
+        cost_price REAL NOT NULL DEFAULT 0,
+        iva_rate REAL NOT NULL DEFAULT 0,
+        profit_iva REAL NOT NULL DEFAULT 0,
+        images TEXT,
         created_at TEXT NOT NULL,
-        FOREIGN KEY (category_id) REFERENCES categories(id)
+        FOREIGN KEY (category_id) REFERENCES categories(id),
+        FOREIGN KEY (store_id) REFERENCES stores(id)
       )
     ''');
 
@@ -474,6 +484,60 @@ class DatabaseService {
       table: 'products',
       column: 'price',
       definition: 'REAL NOT NULL DEFAULT 0',
+    );
+    await _ensureColumn(
+      db,
+      table: 'products',
+      column: 'uid',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'products',
+      column: 'aux_code',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'products',
+      column: 'store_id',
+      definition: 'INTEGER',
+    );
+    await _ensureColumn(
+      db,
+      table: 'products',
+      column: 'cost_price',
+      definition: 'REAL NOT NULL DEFAULT 0',
+    );
+    await _ensureColumn(
+      db,
+      table: 'products',
+      column: 'iva_rate',
+      definition: 'REAL NOT NULL DEFAULT 0',
+    );
+    await _ensureColumn(
+      db,
+      table: 'products',
+      column: 'profit_iva',
+      definition: 'REAL NOT NULL DEFAULT 0',
+    );
+    await _ensureColumn(
+      db,
+      table: 'products',
+      column: 'images',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'products',
+      column: 'description',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'products',
+      column: 'tags',
+      definition: 'TEXT',
     );
     await _ensureColumn(
       db,
@@ -789,22 +853,34 @@ class DatabaseService {
       '''
       SELECT
         p.id,
+        p.uid,
         p.name,
         p.sku,
+        p.aux_code,
+        p.description,
+        p.tags,
         p.price,
+        p.cost_price,
+        p.iva_rate,
+        p.profit_iva,
+        p.images,
+        p.store_id,
         COALESCE(c.name, 'Sin categoría') AS category,
+        COALESCE(st.name, '') AS store_name,
         COALESCE(SUM(i.stock), 0) AS total_stock,
         COALESCE(MAX(CASE WHEN s.name = 'Bazar' THEN i.stock END), 0) AS stock_bazar,
         COALESCE(MAX(CASE WHEN s.name = 'Tienda' THEN i.stock END), 0) AS stock_tienda
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
+      LEFT JOIN stores st ON st.id = p.store_id
       LEFT JOIN inventory i ON i.product_id = p.id
       LEFT JOIN stores s ON s.id = i.store_id
       WHERE p.name LIKE ? OR p.sku LIKE ? OR COALESCE(c.name, '') LIKE ?
+        OR COALESCE(p.aux_code, '') LIKE ?
       GROUP BY p.id, p.name, p.sku, p.price, c.name
       ORDER BY p.name COLLATE NOCASE
       ''',
-      [filter, filter, filter],
+      [filter, filter, filter, filter, filter],
     );
   }
 
@@ -837,8 +913,16 @@ class DatabaseService {
   static Future<void> createProduct({
     required String name,
     double price = 0,
+    double costPrice = 0,
+    double ivaRate = 0,
+    double profitIva = 0,
     String? sku,
+    String? auxCode,
+    String? description,
+    String? tags,
+    int? storeId,
     String? categoryName,
+    List<String> images = const [],
     Map<int, int> initialStock = const {},
   }) async {
     final cleanName = _cleanName(name);
@@ -863,24 +947,35 @@ class DatabaseService {
         txn,
         (sku?.trim().isNotEmpty ?? false) ? sku!.trim() : _buildSku(cleanName),
       );
+      final uid = generateFirebaseId();
+      final imagesJson = images.isEmpty ? null : images.join(',');
 
       final productId = await txn.rawInsert(
-        'INSERT INTO products (name, sku, category_id, price, created_at) VALUES (?, ?, ?, ?, ?)',
+        'INSERT INTO products (uid, name, sku, aux_code, description, tags, category_id, store_id, price, cost_price, iva_rate, profit_iva, images, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
+          uid,
           cleanName,
           uniqueSku,
+          auxCode?.trim().isEmpty ?? true ? null : auxCode!.trim(),
+          description?.trim().isEmpty ?? true ? null : description!.trim(),
+          tags?.trim().isEmpty ?? true ? null : tags!.trim(),
           categoryId,
+          storeId,
           price < 0 ? 0 : price,
+          costPrice < 0 ? 0 : costPrice,
+          ivaRate < 0 ? 0 : ivaRate,
+          profitIva < 0 ? 0 : profitIva,
+          imagesJson,
           DateTime.now().toIso8601String(),
         ],
       );
 
       final storeRows = await txn.rawQuery('SELECT id FROM stores ORDER BY id');
       for (final store in storeRows) {
-        final storeId = (store['id'] as num).toInt();
+        final sid = (store['id'] as num).toInt();
         await txn.rawInsert(
           'INSERT OR IGNORE INTO inventory (product_id, store_id, stock) VALUES (?, ?, ?)',
-          [productId, storeId, max(0, initialStock[storeId] ?? 0)],
+          [productId, sid, max(0, initialStock[sid] ?? 0)],
         );
       }
     });
@@ -1035,6 +1130,14 @@ class DatabaseService {
     required String categoryName,
     required String sku,
     required double price,
+    double costPrice = 0,
+    double ivaRate = 0,
+    double profitIva = 0,
+    String? auxCode,
+    String? description,
+    String? tags,
+    int? storeId,
+    List<String>? images,
   }) async {
     final cleanName = _cleanName(name);
     if (cleanName.isEmpty) {
@@ -1052,13 +1155,22 @@ class DatabaseService {
       }
 
       final categoryId = await _ensureCategory(txn, categoryName);
+      final imagesJson = images == null ? null : (images.isEmpty ? null : images.join(','));
       await txn.rawUpdate(
-        'UPDATE products SET name = ?, sku = ?, category_id = ?, price = ? WHERE id = ?',
+        'UPDATE products SET name = ?, sku = ?, aux_code = ?, description = ?, tags = ?, category_id = ?, store_id = ?, price = ?, cost_price = ?, iva_rate = ?, profit_iva = ?, images = ? WHERE id = ?',
         [
           cleanName,
           sku.trim().isEmpty ? _buildSku(cleanName) : sku.trim(),
+          auxCode?.trim().isEmpty ?? true ? null : auxCode!.trim(),
+          description?.trim().isEmpty ?? true ? null : description!.trim(),
+          tags?.trim().isEmpty ?? true ? null : tags!.trim(),
           categoryId,
+          storeId,
           price < 0 ? 0 : price,
+          costPrice < 0 ? 0 : costPrice,
+          ivaRate < 0 ? 0 : ivaRate,
+          profitIva < 0 ? 0 : profitIva,
+          imagesJson,
           productId,
         ],
       );

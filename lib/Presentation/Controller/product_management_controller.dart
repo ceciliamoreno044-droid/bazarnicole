@@ -34,14 +34,30 @@ class ProductManagementController extends ChangeNotifier {
     required String name,
     required String category,
     required double price,
+    double costPrice = 0,
+    double ivaRate = 0,
+    double profitIva = 0,
     String? sku,
+    String? auxCode,
+    String? description,
+    String? tags,
+    int? storeId,
+    List<String> images = const [],
     Map<int, int> initialStock = const {},
   }) async {
     await DatabaseService.createProduct(
       name: name,
       price: price,
+      costPrice: costPrice,
+      ivaRate: ivaRate,
+      profitIva: profitIva,
       categoryName: category,
       sku: sku,
+      auxCode: auxCode,
+      description: description,
+      tags: tags,
+      storeId: storeId,
+      images: images,
       initialStock: initialStock,
     );
     await loadCatalog();
@@ -52,7 +68,15 @@ class ProductManagementController extends ChangeNotifier {
     required String name,
     required String category,
     required double price,
+    double costPrice = 0,
+    double ivaRate = 0,
+    double profitIva = 0,
     String? sku,
+    String? auxCode,
+    String? description,
+    String? tags,
+    int? storeId,
+    List<String>? images,
   }) async {
     await DatabaseService.updateProduct(
       productId: productId,
@@ -60,6 +84,14 @@ class ProductManagementController extends ChangeNotifier {
       categoryName: category,
       sku: sku ?? '',
       price: price,
+      costPrice: costPrice,
+      ivaRate: ivaRate,
+      profitIva: profitIva,
+      auxCode: auxCode,
+      description: description,
+      tags: tags,
+      storeId: storeId,
+      images: images,
     );
     await loadCatalog();
   }
