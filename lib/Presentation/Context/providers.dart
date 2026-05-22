@@ -7,6 +7,7 @@ import 'sale_provider.dart';
 import 'purchase_provider.dart';
 import 'inventory_provider.dart';
 import 'reports_provider.dart';
+import 'analytics_provider.dart';
 import 'package:bazarnicole/Presentation/Controller/users_controller.dart';
 import 'package:bazarnicole/Presentation/Controller/suppliers_controller.dart';
 
@@ -18,49 +19,45 @@ class AppProviders {
     ChangeNotifierProvider<CustomerProvider>(create: (_) => CustomerProvider()),
     ChangeNotifierProvider<SaleProvider>(create: (_) => SaleProvider()),
     ChangeNotifierProvider<PurchaseProvider>(create: (_) => PurchaseProvider()),
-    ChangeNotifierProvider<InventoryProvider>(create: (_) => InventoryProvider()),
+    ChangeNotifierProvider<InventoryProvider>(
+      create: (_) => InventoryProvider(),
+    ),
     ChangeNotifierProvider<ReportsProvider>(create: (_) => ReportsProvider()),
     ChangeNotifierProvider<UsersController>(create: (_) => UsersController()),
-    ChangeNotifierProvider<SuppliersController>(create: (_) => SuppliersController()),
+    ChangeNotifierProvider<SuppliersController>(
+      create: (_) => SuppliersController(),
+    ),
+    // OLAP Analytics — capa Big Data
+    ChangeNotifierProvider<AnalyticsProvider>(
+      create: (_) => AnalyticsProvider(),
+    ),
   ];
 }
 
 /// Para acceder fácilmente desde las vistas
 extension ProviderAccess on BuildContext {
-  ProductProvider get productProvider =>
-      read<ProductProvider>();
+  ProductProvider get productProvider => read<ProductProvider>();
 
-  CustomerProvider get customerProvider =>
-      read<CustomerProvider>();
+  CustomerProvider get customerProvider => read<CustomerProvider>();
 
-  SaleProvider get saleProvider =>
-      read<SaleProvider>();
+  SaleProvider get saleProvider => read<SaleProvider>();
 
-  PurchaseProvider get purchaseProvider =>
-      read<PurchaseProvider>();
+  PurchaseProvider get purchaseProvider => read<PurchaseProvider>();
 
-  InventoryProvider get inventoryProvider =>
-      read<InventoryProvider>();
+  InventoryProvider get inventoryProvider => read<InventoryProvider>();
 
-  ReportsProvider get reportsProvider =>
-      read<ReportsProvider>();
+  ReportsProvider get reportsProvider => read<ReportsProvider>();
 
   // Watchers (para rebuild automático)
-  ProductProvider watchProductProvider() =>
-      watch<ProductProvider>();
+  ProductProvider watchProductProvider() => watch<ProductProvider>();
 
-  CustomerProvider watchCustomerProvider() =>
-      watch<CustomerProvider>();
+  CustomerProvider watchCustomerProvider() => watch<CustomerProvider>();
 
-  SaleProvider watchSaleProvider() =>
-      watch<SaleProvider>();
+  SaleProvider watchSaleProvider() => watch<SaleProvider>();
 
-  PurchaseProvider watchPurchaseProvider() =>
-      watch<PurchaseProvider>();
+  PurchaseProvider watchPurchaseProvider() => watch<PurchaseProvider>();
 
-  InventoryProvider watchInventoryProvider() =>
-      watch<InventoryProvider>();
+  InventoryProvider watchInventoryProvider() => watch<InventoryProvider>();
 
-  ReportsProvider watchReportsProvider() =>
-      watch<ReportsProvider>();
+  ReportsProvider watchReportsProvider() => watch<ReportsProvider>();
 }

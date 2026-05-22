@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:bazarnicole/Presentation/View/Auth/app_routes.dart';
 import 'package:bazarnicole/Presentation/Services/auth_service.dart';
 import 'package:bazarnicole/Presentation/Services/database_service.dart';
+import 'package:bazarnicole/Presentation/Services/background_job_service.dart';
+import 'package:bazarnicole/Presentation/Services/database_maintenance_service.dart';
 import 'package:bazarnicole/Presentation/Utils/Colors.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -63,6 +65,16 @@ Future<void> main() async {
 
   // 🗄️ INICIALIZAR BASE DE DATOS DE FORMA SEGURA
   await _initDatabaseSafely();
+
+  // 🔄 INICIAR MOTOR DE BACKGROUND JOBS + MANTENIMIENTO (OLAP analytics)
+  if (!kIsWeb) {
+    final jobService = BackgroundJobService();
+    jobService.start();
+    await jobService.scheduleDailyMaintenance();
+
+    // 🛠️ Motor de mantenimiento SQLite enterprise (cada 6h)
+    DatabaseMaintenanceService().startPeriodicMaintenance(intervalHours: 6);
+  }
 
   // 🌐 Web: siempre muestra el catálogo público, sin autenticación
   if (kIsWeb) {

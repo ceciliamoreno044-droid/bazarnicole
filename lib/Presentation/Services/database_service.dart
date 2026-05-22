@@ -250,11 +250,27 @@ class DatabaseService {
       onCreate: (db, version) async => _ensureBusinessSchema(db),
       onUpgrade: (db, oldVersion, newVersion) async =>
           _ensureBusinessSchema(db),
-      onOpen: (db) async => _ensureBusinessSchema(db),
+      onOpen: (db) async {
+        // ── PRAGMAs de rendimiento enterprise (ejecutar en cada apertura) ──
+        await db.execute('PRAGMA journal_mode = WAL');
+        await db.execute('PRAGMA synchronous = NORMAL');
+        await db.execute('PRAGMA cache_size = -65536'); // 64 MB RAM cache
+        await db.execute('PRAGMA temp_store = MEMORY');
+        await db.execute('PRAGMA mmap_size = 536870912'); // 512 MB mmap
+        await db.execute('PRAGMA busy_timeout = 10000'); // 10 seg timeout
+        await db.execute('PRAGMA wal_autocheckpoint = 1000');
+        await db.execute('PRAGMA foreign_keys = ON');
+        await _ensureBusinessSchema(db);
+      },
     );
 
     _performAutomaticBackupIfNeeded();
     return db;
+  }
+
+  /// Expone la ruta de la BD para uso en Isolates (AnalyticsService).
+  static Future<String> getDatabasePath() async {
+    return DatabaseLocationService.getDatabasePath();
   }
 
   static Future<void> _ensureBusinessSchema(DatabaseExecutor db) async {
@@ -459,6 +475,55 @@ class DatabaseService {
       )
     ''');
 
+    // --- Módulo de Caja legacy (cajas / egresos_caja / ingresos_caja) ---
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS cajas (
+        id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+        codigo                TEXT    NOT NULL UNIQUE,
+        estado                TEXT    NOT NULL DEFAULT 'c',
+        existente             REAL    NOT NULL DEFAULT 0,
+        fecha_ap              TEXT    NOT NULL,
+        fecha_ci              TEXT,
+        id_usuario            TEXT    NOT NULL DEFAULT '',
+        ingresos              REAL    NOT NULL DEFAULT 0,
+        monto_ap              REAL    NOT NULL DEFAULT 0,
+        pagos                 REAL    NOT NULL DEFAULT 0,
+        billetes_inicio       TEXT,
+        monedas_inicio        TEXT,
+        billetes_fin          TEXT,
+        monedas_fin           TEXT,
+        monto_total_cierre    REAL    NOT NULL DEFAULT 0,
+        monto_billetes_inicio TEXT,
+        monto_monedas_inicio  TEXT,
+        monto_billetes_fin    TEXT,
+        monto_monedas_fin     TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS egresos_caja (
+        id       INTEGER PRIMARY KEY AUTOINCREMENT,
+        _key     TEXT,
+        codigo   TEXT    NOT NULL,
+        concepto TEXT    NOT NULL DEFAULT '',
+        fecha    TEXT    NOT NULL,
+        id_caja  TEXT    NOT NULL,
+        monto    REAL    NOT NULL DEFAULT 0
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS ingresos_caja (
+        id       INTEGER PRIMARY KEY AUTOINCREMENT,
+        _key     TEXT,
+        codigo   TEXT    NOT NULL,
+        concepto TEXT    NOT NULL DEFAULT '',
+        fecha    TEXT    NOT NULL,
+        id_caja  TEXT    NOT NULL,
+        monto    REAL    NOT NULL DEFAULT 0
+      )
+    ''');
+
     // --- Módulo de Usuarios y Roles ---
     // Si la tabla users existe pero es la del dump de Firebase (tiene columna _key),
     // la renombramos a firebase_users para no entrar en conflicto.
@@ -548,6 +613,12 @@ class DatabaseService {
       table: 'products',
       column: 'tags',
       definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'products',
+      column: 'is_active',
+      definition: 'INTEGER NOT NULL DEFAULT 1',
     );
     await _ensureColumn(
       db,
@@ -653,9 +724,171 @@ class DatabaseService {
       "UPDATE products SET uid = (lower(hex(randomblob(10)))) WHERE uid IS NULL OR uid = ''",
     );
 
+    // ── CAPA OLAP: Tablas analíticas enterprise ──────────────
+    await _ensureOlapSchema(db);
+
     await _seedStores(db);
     await _seedCatalog(db);
   }
+
+  /// Crea las tablas y índices de la capa OLAP Big Data.
+  /// Idempotente: usa IF NOT EXISTS en todo.
+  static Future<void> _ensureOlapSchema(DatabaseExecutor db) async {
+    // Resúmenes temporales
+    for (final ddl in _olapTablesDdl) {
+      await db.execute(ddl);
+    }
+    // Índices OLTP críticos
+    for (final idx in _olapIndexesDdl) {
+      await db.execute(idx);
+    }
+  }
+
+  static const List<String> _olapTablesDdl = [
+    '''CREATE TABLE IF NOT EXISTS summary_sales_daily (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      store_id        INTEGER NOT NULL,
+      sale_date       TEXT    NOT NULL,
+      total_sales     INTEGER NOT NULL DEFAULT 0,
+      total_revenue   REAL    NOT NULL DEFAULT 0,
+      total_cost      REAL    NOT NULL DEFAULT 0,
+      total_profit    REAL    NOT NULL DEFAULT 0,
+      total_discount  REAL    NOT NULL DEFAULT 0,
+      total_tax       REAL    NOT NULL DEFAULT 0,
+      avg_ticket      REAL    NOT NULL DEFAULT 0,
+      max_ticket      REAL    NOT NULL DEFAULT 0,
+      min_ticket      REAL    NOT NULL DEFAULT 0,
+      units_sold      INTEGER NOT NULL DEFAULT 0,
+      unique_clients  INTEGER NOT NULL DEFAULT 0,
+      calculated_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      UNIQUE(store_id, sale_date)
+    )''',
+    '''CREATE TABLE IF NOT EXISTS summary_sales_monthly (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      store_id        INTEGER NOT NULL,
+      year_month      TEXT    NOT NULL,
+      total_sales     INTEGER NOT NULL DEFAULT 0,
+      total_revenue   REAL    NOT NULL DEFAULT 0,
+      total_cost      REAL    NOT NULL DEFAULT 0,
+      total_profit    REAL    NOT NULL DEFAULT 0,
+      total_discount  REAL    NOT NULL DEFAULT 0,
+      total_tax       REAL    NOT NULL DEFAULT 0,
+      avg_ticket      REAL    NOT NULL DEFAULT 0,
+      units_sold      INTEGER NOT NULL DEFAULT 0,
+      unique_clients  INTEGER NOT NULL DEFAULT 0,
+      new_clients     INTEGER NOT NULL DEFAULT 0,
+      credit_ratio    REAL    NOT NULL DEFAULT 0,
+      calculated_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      UNIQUE(store_id, year_month)
+    )''',
+    '''CREATE TABLE IF NOT EXISTS summary_sales_annual (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      store_id        INTEGER NOT NULL,
+      sale_year       INTEGER NOT NULL,
+      total_sales     INTEGER NOT NULL DEFAULT 0,
+      total_revenue   REAL    NOT NULL DEFAULT 0,
+      total_cost      REAL    NOT NULL DEFAULT 0,
+      total_profit    REAL    NOT NULL DEFAULT 0,
+      avg_monthly_revenue REAL NOT NULL DEFAULT 0,
+      units_sold      INTEGER NOT NULL DEFAULT 0,
+      calculated_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      UNIQUE(store_id, sale_year)
+    )''',
+    '''CREATE TABLE IF NOT EXISTS analytics_product (
+      id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id          INTEGER NOT NULL,
+      store_id            INTEGER NOT NULL,
+      period_days         INTEGER NOT NULL,
+      units_sold          INTEGER NOT NULL DEFAULT 0,
+      revenue             REAL    NOT NULL DEFAULT 0,
+      cost_total          REAL    NOT NULL DEFAULT 0,
+      profit              REAL    NOT NULL DEFAULT 0,
+      profit_margin       REAL    NOT NULL DEFAULT 0,
+      avg_daily_sales     REAL    NOT NULL DEFAULT 0,
+      rotation_rate       REAL    NOT NULL DEFAULT 0,
+      days_of_stock       REAL    NOT NULL DEFAULT 999,
+      saleability_score   INTEGER NOT NULL DEFAULT 0,
+      rank_by_revenue     INTEGER NOT NULL DEFAULT 0,
+      rank_by_units       INTEGER NOT NULL DEFAULT 0,
+      calculated_at       TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      UNIQUE(product_id, store_id, period_days)
+    )''',
+    '''CREATE TABLE IF NOT EXISTS kpi_snapshot (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      store_id        INTEGER NOT NULL,
+      snapshot_date   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      revenue_today   REAL    NOT NULL DEFAULT 0,
+      revenue_week    REAL    NOT NULL DEFAULT 0,
+      revenue_month   REAL    NOT NULL DEFAULT 0,
+      revenue_year    REAL    NOT NULL DEFAULT 0,
+      sales_today     INTEGER NOT NULL DEFAULT 0,
+      sales_week      INTEGER NOT NULL DEFAULT 0,
+      sales_month     INTEGER NOT NULL DEFAULT 0,
+      profit_today    REAL    NOT NULL DEFAULT 0,
+      profit_month    REAL    NOT NULL DEFAULT 0,
+      margin_month    REAL    NOT NULL DEFAULT 0,
+      low_stock_count INTEGER NOT NULL DEFAULT 0,
+      total_inventory_value REAL NOT NULL DEFAULT 0,
+      active_clients  INTEGER NOT NULL DEFAULT 0,
+      new_clients_month INTEGER NOT NULL DEFAULT 0,
+      credit_balance  REAL    NOT NULL DEFAULT 0,
+      overdue_credit  REAL    NOT NULL DEFAULT 0,
+      revenue_vs_last_month REAL DEFAULT 0,
+      revenue_vs_last_year  REAL DEFAULT 0
+    )''',
+    '''CREATE TABLE IF NOT EXISTS analytics_cache (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      cache_key   TEXT    NOT NULL UNIQUE,
+      payload     TEXT    NOT NULL,
+      ttl_seconds INTEGER NOT NULL DEFAULT 300,
+      created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      expires_at  TEXT    NOT NULL
+    )''',
+    '''CREATE TABLE IF NOT EXISTS background_jobs (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      job_type     TEXT    NOT NULL,
+      store_id     INTEGER,
+      payload      TEXT,
+      status       TEXT    NOT NULL DEFAULT 'pending',
+      priority     INTEGER NOT NULL DEFAULT 5,
+      attempts     INTEGER NOT NULL DEFAULT 0,
+      error_msg    TEXT,
+      scheduled_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      started_at   TEXT,
+      finished_at  TEXT
+    )''',
+    '''CREATE TABLE IF NOT EXISTS trend_sparklines (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      store_id      INTEGER NOT NULL,
+      metric        TEXT    NOT NULL,
+      period_type   TEXT    NOT NULL,
+      data_json     TEXT    NOT NULL,
+      calculated_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+      UNIQUE(store_id, metric, period_type)
+    )''',
+  ];
+
+  static const List<String> _olapIndexesDdl = [
+    // OLTP críticos que podrían no existir aún
+    'CREATE INDEX IF NOT EXISTS idx_sales_store_date ON sales(store_id, date DESC)',
+    'CREATE INDEX IF NOT EXISTS idx_sales_client ON sales(client_id, date DESC)',
+    'CREATE INDEX IF NOT EXISTS idx_sale_items_product ON sale_items(product_id, sale_id)',
+    'CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON sale_items(sale_id)',
+    'CREATE INDEX IF NOT EXISTS idx_inventory_product_store ON inventory(product_id, store_id)',
+    'CREATE INDEX IF NOT EXISTS idx_inventory_store_stock ON inventory(store_id, stock)',
+    'CREATE INDEX IF NOT EXISTS idx_purchases_store ON purchases(store_id, date DESC)',
+    'CREATE INDEX IF NOT EXISTS idx_cash_sessions_store ON cash_sessions(store_id, status, opened_at DESC)',
+    'CREATE INDEX IF NOT EXISTS idx_cash_movements_session ON cash_movements(session_id, created_at DESC)',
+    'CREATE INDEX IF NOT EXISTS idx_credit_sales_status ON credit_sales(status)',
+    'CREATE INDEX IF NOT EXISTS idx_products_store_active ON products(store_id, is_active)',
+    // OLAP
+    'CREATE INDEX IF NOT EXISTS idx_summary_daily_store_date ON summary_sales_daily(store_id, sale_date DESC)',
+    'CREATE INDEX IF NOT EXISTS idx_summary_monthly_store ON summary_sales_monthly(store_id, year_month DESC)',
+    'CREATE INDEX IF NOT EXISTS idx_analytics_product_store ON analytics_product(store_id, period_days, saleability_score DESC)',
+    'CREATE INDEX IF NOT EXISTS idx_kpi_store ON kpi_snapshot(store_id, snapshot_date DESC)',
+    'CREATE INDEX IF NOT EXISTS idx_analytics_cache ON analytics_cache(cache_key, expires_at)',
+    'CREATE INDEX IF NOT EXISTS idx_bg_jobs ON background_jobs(status, priority, scheduled_at)',
+  ];
 
   static Future<void> _seedAdminUser(DatabaseExecutor db) async {
     // Crear usuario administrador por defecto si no existen usuarios
