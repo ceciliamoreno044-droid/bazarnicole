@@ -8,7 +8,7 @@
 PRODUCT_NAME = bazarnicole
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = bazarnicole.com.bazarnicole.bazarnicole
+PRODUCT_BUNDLE_IDENTIFIER = bazarnicole.com.bazarnicole
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 bazarnicole.com.bazarnicole. All rights reserved.

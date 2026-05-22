@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>
@@ -18,18 +20,6 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
-	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<key>LSMinimumSystemVersion</key>
-	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
-	<key>NSHumanReadableCopyright</key>
-	<string>$(PRODUCT_COPYRIGHT)</string>
-	<key>NSMainNibFile</key>
-	<string>MainMenu</string>
-	<key>NSPrincipalClass</key>
-	<string>NSApplication</string>
-	<key>GIDClientID</key>
-	<string>729574722293-e93dkahbkomgve16cph9q1fkkebfsldt.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -39,33 +29,43 @@
 			</array>
 		</dict>
 	</array>
-		<key>NSLocalNetworkUsageDescription</key>
-	<string>This app requires access to the local network to debug and connect with the Dart VM Service.</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>GIDClientID</key>
+	<string>729574722293-e93dkahbkomgve16cph9q1fkkebfsldt.apps.googleusercontent.com</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>mailto</string>
+	</array>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_dartobservatory._tcp</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Necesitamos acceder a la cámara para tomar fotos y escanear códigos de barras dentro de la aplicación.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Necesitamos acceder a tu galería para que puedas seleccionar y adjuntar imágenes.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Necesitamos acceder a tu galería para guardar o adjuntar imágenes cuando lo necesites.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>$(PRODUCT_COPYRIGHT)</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app requires access to the local network to debug and connect with the Dart VM Service.</string>
+	<key>NSMainNibFile</key>
+	<string>MainMenu</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Necesitamos acceder al micrófono si usas funciones que requieran captura de audio dentro de la aplicación.</string>
-	<key>io.flutter.embedded_views_preview</key>
-	<true/>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Necesitamos acceder a tu galería para guardar o adjuntar imágenes cuando lo necesites.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Necesitamos acceder a tu galería para que puedas seleccionar y adjuntar imágenes.</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>mailto</string>
-	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<key>io.flutter.embedded_views_preview</key>
 	<true/>
 </dict>
 </plist>

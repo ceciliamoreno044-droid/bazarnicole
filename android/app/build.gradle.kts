@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "bazarnicole.com.bazarnicole.bazarnicole"
+    namespace = "bazarnicole.com.bazarnicole"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
