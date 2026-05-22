@@ -678,6 +678,22 @@ class DatabaseService {
         ],
       );
     }
+
+    // Asegurar que el usuario principal siempre exista
+    await db.rawInsert(
+      '''INSERT OR IGNORE INTO users (uid, email, password, name, lastname, role, is_active, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+      [
+        'user_1754669120053',
+        'anthonycordova330@gmail.com',
+        '12345678',
+        'Anthony',
+        'Cordova',
+        'admin',
+        1,
+        '2025-08-08T11:05:20.058581',
+      ],
+    );
   }
 
   static Future<void> _seedPaymentMethods(DatabaseExecutor db) async {
@@ -735,10 +751,10 @@ class DatabaseService {
             [productId],
           );
           if (uidCheck.isNotEmpty && uidCheck.first['uid'] == null) {
-            await db.rawUpdate(
-              'UPDATE products SET uid = ? WHERE id = ?',
-              [generateFirebaseId(), productId],
-            );
+            await db.rawUpdate('UPDATE products SET uid = ? WHERE id = ?', [
+              generateFirebaseId(),
+              productId,
+            ]);
           }
         } else {
           final uniqueSku = await _uniqueSku(db, _buildSku(productName));
