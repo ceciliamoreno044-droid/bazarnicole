@@ -2,6 +2,7 @@ import 'package:bazarnicole/Presentation/Controller/suppliers_controller.dart';
 import 'package:bazarnicole/Presentation/Model/supplier_model.dart';
 import 'package:bazarnicole/Presentation/Utils/Colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -112,7 +113,10 @@ class _SuppliersViewState extends State<SuppliersView> {
             itemCount: ctrl.suppliers.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, i) =>
-                _SupplierCard(supplier: ctrl.suppliers[i]),
+                _SupplierCard(supplier: ctrl.suppliers[i])
+                    .animate()
+                    .fadeIn(delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms)
+                    .slideX(begin: 0.1, end: 0, delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms, curve: Curves.easeOut),
           );
         },
       ),

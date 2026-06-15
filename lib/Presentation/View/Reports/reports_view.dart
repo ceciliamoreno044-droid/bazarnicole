@@ -2,6 +2,7 @@ import 'package:bazarnicole/Presentation/Controller/reports_controller.dart';
 import 'package:bazarnicole/Presentation/Renders/responsive_helper.dart';
 import 'package:bazarnicole/Presentation/Utils/Colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 class ReportsView extends StatefulWidget {
@@ -101,13 +102,13 @@ class _ReportsViewState extends State<ReportsView> {
                             title: 'Ventas por día',
                             value: controller.salesCountToday.toString(),
                             subtitle: 'Transacciones de hoy',
-                          ),
+                          ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.15, end: 0, duration: 400.ms, curve: Curves.easeOut),
                           _MetricCard(
                             title: 'Total del día',
                             value:
                                 '\$${controller.totalToday.toStringAsFixed(2)}',
                             subtitle: 'Monto facturado hoy',
-                          ),
+                          ).animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.15, end: 0, delay: 100.ms, duration: 400.ms, curve: Curves.easeOut),
                         ],
                       ),
                       const SizedBox(height: 16),

@@ -1,6 +1,7 @@
 import 'package:bazarnicole/Presentation/Controller/customers_controller.dart';
 import 'package:bazarnicole/Presentation/Utils/Colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -332,20 +333,29 @@ class _CustomersViewState extends State<CustomersView> {
                     ? Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(width: 320, child: formPanel),
+                          SizedBox(width: 320, child: formPanel)
+                              .animate()
+                              .fadeIn(duration: 400.ms)
+                              .slideX(begin: -0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
                           const SizedBox(width: 16),
-                          Expanded(child: listPanel),
+                          Expanded(child: listPanel)
+                              .animate()
+                              .fadeIn(delay: 150.ms, duration: 400.ms)
+                              .slideY(begin: 0.1, end: 0, delay: 150.ms, duration: 400.ms, curve: Curves.easeOut),
                           const SizedBox(width: 16),
-                          historyPanel,
+                          historyPanel
+                              .animate()
+                              .fadeIn(delay: 250.ms, duration: 400.ms)
+                              .slideX(begin: 0.1, end: 0, delay: 250.ms, duration: 400.ms, curve: Curves.easeOut),
                         ],
                       )
                     : ListView(
                         children: [
-                          formPanel,
+                          formPanel.animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
                           const SizedBox(height: 16),
-                          SizedBox(height: 340, child: listPanel),
+                          SizedBox(height: 340, child: listPanel.animate().fadeIn(delay: 150.ms, duration: 400.ms).slideY(begin: 0.1, end: 0, delay: 150.ms, duration: 400.ms, curve: Curves.easeOut)),
                           const SizedBox(height: 16),
-                          historyPanel,
+                          historyPanel.animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.1, end: 0, delay: 250.ms, duration: 400.ms, curve: Curves.easeOut),
                         ],
                       ),
               );

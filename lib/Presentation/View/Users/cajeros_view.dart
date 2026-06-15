@@ -2,6 +2,7 @@ import 'package:bazarnicole/Presentation/Controller/users_controller.dart';
 import 'package:bazarnicole/Presentation/Model/user_model.dart';
 import 'package:bazarnicole/Presentation/Utils/Colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 /// Vista dedicada a gestionar únicamente usuarios con rol "cajero".
@@ -82,7 +83,10 @@ class _CajerosViewState extends State<CajerosView> {
             padding: const EdgeInsets.all(16),
             itemCount: cajeros.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, i) => _CajeroCard(user: cajeros[i]),
+            itemBuilder: (context, i) => _CajeroCard(user: cajeros[i])
+                .animate()
+                .fadeIn(delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms)
+                .slideX(begin: 0.1, end: 0, delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms, curve: Curves.easeOut),
           );
         },
       ),

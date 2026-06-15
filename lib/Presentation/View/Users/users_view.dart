@@ -2,6 +2,7 @@ import 'package:bazarnicole/Presentation/Controller/users_controller.dart';
 import 'package:bazarnicole/Presentation/Model/user_model.dart';
 import 'package:bazarnicole/Presentation/Utils/Colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 class UsersView extends StatefulWidget {
@@ -48,7 +49,10 @@ class _UsersViewState extends State<UsersView> {
             padding: const EdgeInsets.all(16),
             itemCount: ctrl.users.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, i) => _UserCard(user: ctrl.users[i]),
+            itemBuilder: (context, i) => _UserCard(user: ctrl.users[i])
+                .animate()
+                .fadeIn(delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms)
+                .slideX(begin: 0.1, end: 0, delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms, curve: Curves.easeOut),
           );
         },
       ),

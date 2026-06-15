@@ -9,6 +9,7 @@ import 'package:bazarnicole/Presentation/Widgets/Login/login_button.dart';
 import 'package:bazarnicole/Presentation/Widgets/Login/logo_image.dart';
 import 'package:bazarnicole/Presentation/Widgets/Login/password_input.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -84,20 +85,33 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const LogoImage(),
+                const LogoImage()
+                    .animate()
+                    .fadeIn(duration: 500.ms)
+                    .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), duration: 500.ms, curve: Curves.easeOut),
                 const SizedBox(height: 30),
-                EmailInput(controller: emailController),
+                EmailInput(controller: emailController)
+                    .animate()
+                    .fadeIn(delay: 200.ms, duration: 400.ms)
+                    .slideY(begin: 0.2, end: 0, delay: 200.ms, duration: 400.ms, curve: Curves.easeOut),
                 const SizedBox(height: 16),
                 PasswordInput(
                   controller: passwordController,
                   obscurePassword: _obscurePassword,
                   onToggle: () =>
                       setState(() => _obscurePassword = !_obscurePassword),
-                ),
+                )
+                    .animate()
+                    .fadeIn(delay: 320.ms, duration: 400.ms)
+                    .slideY(begin: 0.2, end: 0, delay: 320.ms, duration: 400.ms, curve: Curves.easeOut),
                 const SizedBox(height: 24),
-                loading
+                (loading
                     ? const CircularProgressIndicator()
-                    : LoginButton(onPressed: login),
+                    : LoginButton(onPressed: login))
+                    .animate()
+                    .fadeIn(delay: 440.ms, duration: 400.ms)
+                    .slideY(begin: 0.2, end: 0, delay: 440.ms, duration: 400.ms, curve: Curves.easeOut),
+                const SizedBox(height: 24),
                 const SizedBox(height: 24),
               ],
             ),

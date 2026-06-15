@@ -2,6 +2,7 @@ import 'package:bazarnicole/Presentation/Controller/purchases_controller.dart';
 import 'package:bazarnicole/Presentation/Renders/responsive_helper.dart';
 import 'package:bazarnicole/Presentation/Utils/Colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -331,7 +332,9 @@ class _NewPurchaseTab extends StatelessWidget {
                                       ),
                                     ],
                                   ),
-                                );
+                                ).animate()
+                                  .fadeIn(delay: Duration(milliseconds: 30 * (index % 20)), duration: 280.ms)
+                                  .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), delay: Duration(milliseconds: 30 * (index % 20)), duration: 280.ms, curve: Curves.easeOut);
                               },
                             ),
                     ),

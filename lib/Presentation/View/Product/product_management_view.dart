@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:bazarnicole/Presentation/Controller/product_management_controller.dart';
 import 'package:bazarnicole/Presentation/Utils/Colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -1045,7 +1046,9 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                             ],
                           ),
                         ),
-                      );
+                      ).animate()
+                        .fadeIn(delay: Duration(milliseconds: 40 * (index % 20)), duration: 300.ms)
+                        .slideX(begin: 0.1, end: 0, delay: Duration(milliseconds: 40 * (index % 20)), duration: 300.ms, curve: Curves.easeOut);
                     },
                   ),
               ],

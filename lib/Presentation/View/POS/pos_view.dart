@@ -13,6 +13,7 @@ import 'package:bazarnicole/Presentation/Widgets/POS/pos_client_search_dialog.da
 import 'package:bazarnicole/Presentation/Widgets/POS/pos_sales_history_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 // ─────────────────────────────────────────────────────────────────
@@ -212,12 +213,18 @@ class _PosScaffoldState extends State<_PosScaffold> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // ── Tipo de comprobante
-                      const PosReceiptTypeCard(),
+                      const PosReceiptTypeCard()
+                          .animate()
+                          .fadeIn(duration: 350.ms)
+                          .slideY(begin: 0.1, end: 0, duration: 350.ms, curve: Curves.easeOut),
                       const SizedBox(height: 16),
                       // ── Cliente
                       PosClienteSection(
                         onShowClientSearch: (ctx, _) => _showClientSearch(ctx),
-                      ),
+                      )
+                          .animate()
+                          .fadeIn(delay: 80.ms, duration: 350.ms)
+                          .slideY(begin: 0.1, end: 0, delay: 80.ms, duration: 350.ms, curve: Curves.easeOut),
                       const SizedBox(height: 16),
                       // ── Local
                       if (posCtrl.stores.isNotEmpty)
@@ -244,16 +251,28 @@ class _PosScaffoldState extends State<_PosScaffold> {
                       PosProductosSection(
                         onShowProductSearch: (ctx, _) =>
                             _showProductSearch(ctx),
-                      ),
+                      )
+                          .animate()
+                          .fadeIn(delay: 160.ms, duration: 350.ms)
+                          .slideY(begin: 0.1, end: 0, delay: 160.ms, duration: 350.ms, curve: Curves.easeOut),
                       const SizedBox(height: 16),
                       // ── Forma de pago
-                      const PosFormaPagoSection(),
+                      const PosFormaPagoSection()
+                          .animate()
+                          .fadeIn(delay: 240.ms, duration: 350.ms)
+                          .slideY(begin: 0.1, end: 0, delay: 240.ms, duration: 350.ms, curve: Curves.easeOut),
                       const SizedBox(height: 16),
                       // ── Pagos recibidos
-                      PosPagosRecibidosSection(total: total),
+                      PosPagosRecibidosSection(total: total)
+                          .animate()
+                          .fadeIn(delay: 300.ms, duration: 350.ms)
+                          .slideY(begin: 0.1, end: 0, delay: 300.ms, duration: 350.ms, curve: Curves.easeOut),
                       const SizedBox(height: 16),
                       // ── Resumen de venta
-                      PosResumenVentaCard(subtotal: cartTotal),
+                      PosResumenVentaCard(subtotal: cartTotal)
+                          .animate()
+                          .fadeIn(delay: 360.ms, duration: 350.ms)
+                          .slideY(begin: 0.1, end: 0, delay: 360.ms, duration: 350.ms, curve: Curves.easeOut),
                       const SizedBox(height: 20),
                       // ── Botones finales
                       Row(

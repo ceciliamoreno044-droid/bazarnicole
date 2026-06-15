@@ -5,6 +5,7 @@ import 'package:bazarnicole/Presentation/Services/session_service.dart';
 import 'package:bazarnicole/Presentation/Utils/Colors.dart';
 import 'package:bazarnicole/Presentation/Widgets/cash_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 class CashView extends StatefulWidget {
@@ -167,6 +168,7 @@ class _CajaTab extends StatelessWidget {
                             : 'Caja cerrada',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
+
                       const SizedBox(height: 8),
                       if (controller.activeSession != null)
                         Text(
@@ -295,8 +297,12 @@ class _CajaTab extends StatelessWidget {
                   ),
                 )
               else
-                ...controller.movements.reversed.map(
-                  (m) => Card(
+                ...controller.movements.reversed.toList().asMap().entries.map((
+                  entry,
+                ) {
+                  final i = entry.key;
+                  final m = entry.value;
+                  return Card(
                     elevation: 4,
                     color: AppColors.whiteOverlay,
                     child: ListTile(
@@ -324,8 +330,10 @@ class _CajaTab extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ),
-                ),
+                  ).animate()
+                    .fadeIn(delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms)
+                    .slideX(begin: -0.1, end: 0, delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms, curve: Curves.easeOut);
+                }),
             ],
           ),
         );
