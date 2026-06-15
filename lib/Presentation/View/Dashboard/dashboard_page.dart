@@ -2,6 +2,7 @@ import 'package:bazarnicole/Presentation/Services/auth_service.dart';
 import 'package:bazarnicole/Presentation/View/Auth/app_routes.dart';
 import 'package:bazarnicole/Presentation/Utils/Colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -240,7 +241,19 @@ class _DashboardPageState extends State<DashboardPage> {
                 crossAxisSpacing: 10,
                 childAspectRatio: 1,
               ),
-              itemBuilder: (context, index) => cards[index],
+              itemBuilder: (context, index) => cards[index]
+                  .animate()
+                  .fadeIn(
+                    delay: Duration(milliseconds: 60 * index),
+                    duration: 350.ms,
+                  )
+                  .slideY(
+                    begin: 0.2,
+                    end: 0,
+                    delay: Duration(milliseconds: 60 * index),
+                    duration: 350.ms,
+                    curve: Curves.easeOut,
+                  ),
             ),
           ),
           // Perfil: placeholder hasta que exista la pantalla real
@@ -310,7 +323,14 @@ class _DashboardCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 40, color: AppColors.primaryLogo),
+              Icon(icon, size: 40, color: AppColors.primaryLogo)
+                  .animate(onPlay: (c) => c.forward())
+                  .scale(
+                    begin: const Offset(0.7, 0.7),
+                    end: const Offset(1.0, 1.0),
+                    duration: 400.ms,
+                    curve: Curves.elasticOut,
+                  ),
               const SizedBox(height: 12),
               Text(
                 title,
