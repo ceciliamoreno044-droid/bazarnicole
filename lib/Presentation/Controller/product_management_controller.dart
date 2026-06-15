@@ -1,3 +1,4 @@
+import 'package:bazarnicole/Presentation/Services/catalog_sync_service.dart';
 import 'package:bazarnicole/Presentation/Services/database_service.dart';
 import 'package:flutter/foundation.dart';
 
@@ -61,6 +62,7 @@ class ProductManagementController extends ChangeNotifier {
       initialStock: initialStock,
     );
     await loadCatalog();
+    CatalogSyncService.instance.markDirty(); // ← Producto creado
   }
 
   Future<void> updateProduct({
@@ -94,6 +96,7 @@ class ProductManagementController extends ChangeNotifier {
       images: images,
     );
     await loadCatalog();
+    CatalogSyncService.instance.markDirty(); // ← Producto actualizado
   }
 
   Future<void> updateProductWithStock({
@@ -135,10 +138,12 @@ class ProductManagementController extends ChangeNotifier {
       );
     }
     await loadCatalog();
+    CatalogSyncService.instance.markDirty(); // ← Producto + stock actualizado
   }
 
   Future<void> deleteProduct(int productId) async {
     await DatabaseService.deleteProduct(productId);
     await loadCatalog();
+    CatalogSyncService.instance.markDirty(); // ← Producto eliminado
   }
 }

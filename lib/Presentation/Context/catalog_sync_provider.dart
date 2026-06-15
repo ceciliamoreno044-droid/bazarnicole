@@ -52,6 +52,10 @@ class CatalogSyncProvider extends ChangeNotifier {
         return '✅ Publicado correctamente';
       case SyncStatus.error:
         return '❌ Error de sincronización';
+      case SyncStatus.hashing:
+        return 'Calculando cambios…';
+      case SyncStatus.skipped:
+        return '✔ Sin cambios — catálogo actualizado';
     }
   }
 

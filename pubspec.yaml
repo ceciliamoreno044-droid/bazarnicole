@@ -85,6 +85,7 @@ dependencies:
   sembast: ^3.8.5+1
   window_manager: ^0.5.1
   data_table_2: ^2.6.0
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:

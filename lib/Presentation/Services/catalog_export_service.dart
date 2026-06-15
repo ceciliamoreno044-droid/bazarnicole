@@ -98,6 +98,7 @@ class CatalogManifest {
   final String updatedAt;
   final int productsCount;
   final int categoriesCount;
+  final String? catalogHash;
 
   // Particionado futuro: cuántas páginas existen cuando >10.000 productos.
   final int? totalPages;
@@ -108,6 +109,7 @@ class CatalogManifest {
     required this.updatedAt,
     required this.productsCount,
     required this.categoriesCount,
+    this.catalogHash,
     this.totalPages,
     this.pageSize,
   });
@@ -117,6 +119,7 @@ class CatalogManifest {
         'updatedAt': updatedAt,
         'productsCount': productsCount,
         'categoriesCount': categoriesCount,
+        if (catalogHash != null) 'catalogHash': catalogHash,
         if (totalPages != null) 'totalPages': totalPages,
         if (pageSize != null) 'pageSize': pageSize,
       };
@@ -163,7 +166,15 @@ class CatalogExportService {
 
   /// Ejecuta exportación completa.
   /// Devuelve [ExportResult] con el estado y estadísticas.
-  static Future<ExportResult> exportAll(String exportDir) async {
+  static Future<ExportResult> exportAll(String exportDir) async =>
+      exportAllWithHash(exportDir);
+
+  /// Exportación completa con hash opcional para el manifest.json.
+  /// [catalogHash] es el SHA-256 del catálogo calculado previamente.
+  static Future<ExportResult> exportAllWithHash(
+    String exportDir, {
+    String? catalogHash,
+  }) async {
     try {
       final products = await _fetchProducts();
       final categories = await _fetchCategories();
@@ -175,6 +186,7 @@ class CatalogExportService {
         exportDir: exportDir,
         productsCount: products.length,
         categoriesCount: categories.length,
+        catalogHash: catalogHash,
       );
 
       print('[CatalogExportService] ✅ Exportados: '
@@ -249,6 +261,7 @@ class CatalogExportService {
     required String exportDir,
     required int productsCount,
     required int categoriesCount,
+    String? catalogHash,
   }) async {
     final manifestFile = File(p.join(exportDir, 'manifest.json'));
 
@@ -273,6 +286,7 @@ class CatalogExportService {
       updatedAt: DateTime.now().toUtc().toIso8601String(),
       productsCount: productsCount,
       categoriesCount: categoriesCount,
+      catalogHash: catalogHash,
       totalPages: totalPages,
       pageSize: totalPages != null ? _pageSize : null,
     );
