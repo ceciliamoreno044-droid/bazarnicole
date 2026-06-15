@@ -156,7 +156,8 @@ class GoogleDriveBackupService {
       final dbPath = await _getDbPath();
       final db = await _openDb(dbPath);
 
-      final tables = await _getAllTableNames(db);
+      // Solo se exportan productos y categorías al catálogo de Drive.
+      const tables = ['products', 'categories'];
       final List<String> uploadedFiles = [];
 
       for (int i = 0; i < tables.length; i++) {
@@ -256,13 +257,6 @@ class GoogleDriveBackupService {
       path,
       options: OpenDatabaseOptions(readOnly: true),
     );
-  }
-
-  static Future<List<String>> _getAllTableNames(Database db) async {
-    final result = await db.rawQuery(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_%'",
-    );
-    return result.map((row) => row['name'] as String).toList();
   }
 
   static Future<String> _createDriveFolder(

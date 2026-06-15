@@ -130,33 +130,38 @@ class DriveDataService {
       // 1. Encontrar la carpeta de backup más reciente
       final backupFolderId = await _findLatestBackupFolder(driveApi);
 
-      // 2. Localizar subcarpetas
-      final jsonFolderId =
-          await _findSubfolder(driveApi, backupFolderId, 'tablas_json');
-      final imagesFolderId =
-          await _findSubfolder(driveApi, backupFolderId, 'imagenes');
+      // 2. Localizar subcarpeta de JSONs
+      final jsonFolderId = await _findSubfolder(
+        driveApi,
+        backupFolderId,
+        'tablas_json',
+      );
+      final imagesFolderId = await _findSubfolder(
+        driveApi,
+        backupFolderId,
+        'imagenes',
+      );
 
-      // 3. Descargar JSONs en paralelo
+      // 3. Descargar solo products.json y categories.json
       final results = await Future.wait([
         _downloadJson(driveApi, jsonFolderId, 'products.json'),
         _downloadJson(driveApi, jsonFolderId, 'categories.json'),
-        _downloadJson(driveApi, jsonFolderId, 'inventory.json'),
-        _downloadJson(driveApi, jsonFolderId, 'stores.json'),
       ]);
 
       final productsJson = results[0];
       final categoriesJson = results[1];
-      final inventoryJson = results[2];
+
       // 4. Parsear datos
       final productsByCategory = _buildProductsByCategory(
         productsJson: productsJson,
         categoriesJson: categoriesJson,
-        inventoryJson: inventoryJson,
       );
 
       // 5. Listar imágenes
-      final imageThumbnails =
-          await _listImageThumbnails(driveApi, imagesFolderId);
+      final imageThumbnails = await _listImageThumbnails(
+        driveApi,
+        imagesFolderId,
+      );
 
       return CatalogDriveData(
         productsByCategory: productsByCategory,
@@ -228,10 +233,12 @@ class DriveDataService {
     }
 
     final fileId = files.first.id!;
-    final media = await api.files.get(
-      fileId,
-      downloadOptions: drive.DownloadOptions.fullMedia,
-    ) as drive.Media;
+    final media =
+        await api.files.get(
+              fileId,
+              downloadOptions: drive.DownloadOptions.fullMedia,
+            )
+            as drive.Media;
 
     final bytes = <int>[];
     await for (final chunk in media.stream) {
@@ -284,7 +291,6 @@ class DriveDataService {
   static Map<String, List<DriveProduct>> _buildProductsByCategory({
     required List<Map<String, dynamic>> productsJson,
     required List<Map<String, dynamic>> categoriesJson,
-    required List<Map<String, dynamic>> inventoryJson,
   }) {
     // Mapa categoryId → categoryName
     final categoryNames = <int, String>{};
@@ -292,16 +298,6 @@ class DriveDataService {
       final id = (c['id'] as num?)?.toInt();
       final name = c['name'] as String?;
       if (id != null && name != null) categoryNames[id] = name;
-    }
-
-    // Mapa productId → totalStock (suma de todos los stores)
-    final stockByProduct = <int, int>{};
-    for (final inv in inventoryJson) {
-      final pid = (inv['product_id'] as num?)?.toInt();
-      final stock = (inv['stock'] as num?)?.toInt() ?? 0;
-      if (pid != null) {
-        stockByProduct[pid] = (stockByProduct[pid] ?? 0) + stock;
-      }
     }
 
     final Map<String, List<DriveProduct>> byCategory = {};
@@ -312,13 +308,14 @@ class DriveDataService {
       final sku = p['sku'] as String? ?? '';
       final price = (p['price'] as num?)?.toDouble() ?? 0;
       final categoryId = (p['category_id'] as num?)?.toInt();
+      // Stock directo desde la tabla products (campo stock si existe)
+      final stock = (p['stock'] as num?)?.toInt() ?? 0;
 
       if (id == null || name == null) continue;
 
       final categoryName =
           (categoryId != null ? categoryNames[categoryId] : null) ??
-              'Sin categoría';
-      final stock = stockByProduct[id] ?? 0;
+          'Sin categoría';
 
       final product = DriveProduct(
         id: id,
