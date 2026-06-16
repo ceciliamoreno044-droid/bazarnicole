@@ -20,7 +20,7 @@ class _WebCatalogViewState extends State<WebCatalogView>
   TabController? _tabController;
   String _search = '';
 
-  /// Datos reales de Drive (null = aún cargando o no autenticado).
+  /// Datos reales de Drive (null = aún cargando).
   CatalogDriveData? _driveData;
   bool _driveLoading = false;
   String? _driveError;
@@ -48,46 +48,15 @@ class _WebCatalogViewState extends State<WebCatalogView>
 
   // ── Carga de datos desde Drive ─────────────────────────────────────────────
 
+  // ── Carga de datos desde Drive (pública, sin login) ─────────────────────────
+
   Future<void> _loadDriveData() async {
     setState(() {
       _driveLoading = true;
       _driveError = null;
     });
-
-    // Intentar sesión silenciosa primero
-    if (!DriveDataService.isSignedIn) {
-      await DriveDataService.signInSilently();
-    }
-
-    if (!DriveDataService.isSignedIn) {
-      // No hay sesión: el catálogo muestra datos estáticos con opción de login
-      setState(() => _driveLoading = false);
-      return;
-    }
-
     try {
-      final data = await DriveDataService.fetchCatalogData();
-      if (mounted) {
-        setState(() {
-          _driveData = data;
-          _initTabController();
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _driveError = e.toString());
-    } finally {
-      if (mounted) setState(() => _driveLoading = false);
-    }
-  }
-
-  Future<void> _signInAndLoad() async {
-    setState(() {
-      _driveLoading = true;
-      _driveError = null;
-    });
-    try {
-      await DriveDataService.signIn();
-      final data = await DriveDataService.fetchCatalogData();
+      final data = await DriveDataService.fetchPublic();
       if (mounted) {
         setState(() {
           _driveData = data;
@@ -156,9 +125,7 @@ class _WebCatalogViewState extends State<WebCatalogView>
             Padding(
               padding: const EdgeInsets.only(right: 10),
               child: Tooltip(
-                message:
-                    'Datos en tiempo real desde Google Drive\n'
-                    '(${_driveData!.userEmail})',
+                message: 'Datos en tiempo real desde Google Drive',
                 child: const Icon(
                   Icons.cloud_done_outlined,
                   color: Colors.white70,
@@ -170,14 +137,14 @@ class _WebCatalogViewState extends State<WebCatalogView>
             Padding(
               padding: const EdgeInsets.only(right: 6),
               child: TextButton.icon(
-                onPressed: _signInAndLoad,
+                onPressed: _loadDriveData,
                 icon: const Icon(
-                  Icons.cloud_off_outlined,
+                  Icons.refresh_outlined,
                   color: Colors.white60,
                   size: 18,
                 ),
                 label: const Text(
-                  'Conectar Drive',
+                  'Reintentar',
                   style: TextStyle(color: Colors.white60, fontSize: 11),
                 ),
               ),
@@ -252,14 +219,14 @@ class _WebCatalogViewState extends State<WebCatalogView>
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          'Conecta con Google Drive para ver el catálogo',
+                          'No se pudo cargar el catálogo',
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 12),
                         ElevatedButton.icon(
-                          onPressed: _signInAndLoad,
-                          icon: const Icon(Icons.login),
-                          label: const Text('Conectar Drive'),
+                          onPressed: _loadDriveData,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Reintentar'),
                         ),
                       ],
                     ),

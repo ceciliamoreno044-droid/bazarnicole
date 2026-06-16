@@ -83,6 +83,15 @@ class DriveDataService {
   // ID fijo de la carpeta raíz "bazarypapeleria" en Drive.
   static const _bazarFolderId = '1mksspeR2VoZuSj92LIke0dxobma6U0Ke';
 
+  // ID fijo del backup más reciente: BazarNicole_Backup_20260615_2020
+  static const _backupFolderId = '14jkB_xNTPtFgNM4CdPhDMHorlAWHPEZE';
+
+  // API Key pública de Google — solo lectura en carpetas compartidas públicamente.
+  static const _apiKey = 'AIzaSyDlhgSJdJTO1plLjJOFM1g8dBQ8f0U_RUY';
+
+  // URL base de Drive REST API v3
+  static const _driveBase = 'https://www.googleapis.com/drive/v3';
+
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: [drive.DriveApi.driveReadonlyScope],
   );
@@ -120,7 +129,180 @@ class DriveDataService {
     _account = null;
   }
 
-  // ── Carga principal ─────────────────────────────────────────────────────────
+  // ── Carga pública (sin login) ────────────────────────────────────────────────
+
+  /// Carga el catálogo desde una carpeta Drive compartida públicamente,
+  /// usando solo la API Key (sin OAuth). No requiere inicio de sesión.
+  ///
+  /// La carpeta raíz y sus subcarpetas deben tener permisos
+  /// "Cualquier persona con el enlace puede ver".
+  static Future<CatalogDriveData> fetchPublic() async {
+    try {
+      // El backup folder es conocido y fijo — no necesita búsqueda dinámica.
+      const backupFolderId = _backupFolderId;
+
+      // 1. Localizar subcarpetas tablas_json e imagenes
+      final jsonFolderId = await _publicFindSubfolder(
+        backupFolderId,
+        'tablas_json',
+      );
+      final imagesFolderId = await _publicFindSubfolder(
+        backupFolderId,
+        'imagenes',
+      );
+
+      // 2. Descargar JSON en paralelo
+      final results = await Future.wait([
+        _publicDownloadJson(jsonFolderId, 'products.json'),
+        _publicDownloadJson(jsonFolderId, 'categories.json'),
+        _publicDownloadJson(jsonFolderId, 'stores.json'),
+      ]);
+
+      final productsJson = results[0];
+      final categoriesJson = results[1];
+      final storesJson = results[2];
+
+      // 3. Listar imágenes
+      final imageThumbnails = await _publicListImageThumbnails(imagesFolderId);
+
+      // 4. Construir mapa legacy y secciones
+      final productsByCategory = _buildProductsByCategory(
+        productsJson: productsJson,
+        categoriesJson: categoriesJson,
+        storesJson: storesJson,
+      );
+
+      final sections = CatalogBuilder.buildFromJson(
+        productsJson: productsJson,
+        categoriesJson: categoriesJson,
+        storesJson: storesJson,
+        imageThumbnails: imageThumbnails,
+      );
+
+      return CatalogDriveData(
+        productsByCategory: productsByCategory,
+        imageThumbnails: imageThumbnails,
+        userEmail: '',
+        sections: sections,
+      );
+    } catch (e) {
+      debugPrint('[DriveDataService.fetchPublic] error: $e');
+      rethrow;
+    }
+  }
+
+  // ── Helpers públicos (API Key) ────────────────────────────────────────────
+
+  static Uri _driveFilesUri(Map<String, String> params) {
+    return Uri.parse(
+      '$_driveBase/files',
+    ).replace(queryParameters: {...params, 'key': _apiKey});
+  }
+
+  static Future<Map<String, dynamic>> _publicGet(Uri uri) async {
+    final resp = await http.get(uri);
+    if (resp.statusCode != 200) {
+      throw Exception('Drive API error ${resp.statusCode}: ${resp.body}');
+    }
+    return jsonDecode(resp.body) as Map<String, dynamic>;
+  }
+
+  /// Busca una subcarpeta por nombre usando API Key.
+  static Future<String> _publicFindSubfolder(
+    String parentId,
+    String name,
+  ) async {
+    final uri = _driveFilesUri({
+      'q':
+          "'$parentId' in parents and name='$name' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+      'pageSize': '5',
+      'fields': 'files(id,name)',
+    });
+    final data = await _publicGet(uri);
+    final files = (data['files'] as List?)?.cast<Map<String, dynamic>>();
+    if (files == null || files.isEmpty) {
+      throw Exception("Subcarpeta '$name' no encontrada en Drive.");
+    }
+    return files.first['id'] as String;
+  }
+
+  /// Descarga un JSON de Drive usando API Key.
+  static Future<List<Map<String, dynamic>>> _publicDownloadJson(
+    String folderId,
+    String fileName,
+  ) async {
+    // 1. Buscar el archivo
+    final listUri = _driveFilesUri({
+      'q': "'$folderId' in parents and name='$fileName' and trashed=false",
+      'pageSize': '5',
+      'fields': 'files(id,name)',
+    });
+    final listData = await _publicGet(listUri);
+    final files = (listData['files'] as List?)?.cast<Map<String, dynamic>>();
+    if (files == null || files.isEmpty) {
+      debugPrint('[DriveDataService] $fileName no encontrado, omitiendo.');
+      return [];
+    }
+
+    // 2. Descargar contenido
+    final fileId = files.first['id'] as String;
+    final downloadUri = Uri.parse(
+      '$_driveBase/files/$fileId',
+    ).replace(queryParameters: {'alt': 'media', 'key': _apiKey});
+    final resp = await http.get(downloadUri);
+    if (resp.statusCode != 200) {
+      debugPrint(
+        '[DriveDataService] Error descargando $fileName: ${resp.statusCode}',
+      );
+      return [];
+    }
+
+    final decoded = jsonDecode(utf8.decode(resp.bodyBytes));
+    if (decoded is List) return decoded.cast<Map<String, dynamic>>();
+    return [];
+  }
+
+  /// Lista thumbnails de imágenes en un folder usando API Key.
+  static Future<Map<String, String>> _publicListImageThumbnails(
+    String folderId,
+  ) async {
+    final Map<String, String> result = {};
+    String? pageToken;
+
+    do {
+      final params = <String, String>{
+        'q': "'$folderId' in parents and trashed=false",
+        'pageSize': '100',
+        'fields': 'nextPageToken,files(id,name,thumbnailLink)',
+      };
+      if (pageToken != null) params['pageToken'] = pageToken;
+
+      final uri = _driveFilesUri(params);
+      final data = await _publicGet(uri);
+      final files =
+          (data['files'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+      for (final f in files) {
+        final name = f['name'] as String?;
+        if (name == null) continue;
+        final normalized = _normalizeName(name);
+        final thumb = f['thumbnailLink'] != null
+            ? (f['thumbnailLink'] as String).replaceAll(
+                RegExp(r'=s\d+'),
+                '=s800',
+              )
+            : 'https://lh3.googleusercontent.com/d/${f['id']}';
+        result[normalized] = thumb;
+      }
+
+      pageToken = data['nextPageToken'] as String?;
+    } while (pageToken != null);
+
+    debugPrint('[DriveDataService] Imágenes cargadas: ${result.length}');
+    return result;
+  }
+
+  // ── Carga principal (OAuth) ─────────────────────────────────────────────────
 
   /// Carga productos e imágenes del backup más reciente en Drive.
   ///
