@@ -57,7 +57,8 @@ class GitSyncLogEntry {
 /// Flujo estándar de publicación:
 ///   1. [status]  → detectar si hay cambios
 ///   2. [addAll]  → git add .
-///   3. [commit]  → git commit -m "catalog update: <timestamp>"
+///   3. [commit]  → git commit -m "catalog update:
+///   < timestamp >"
 ///   4. [push]    → git push
 ///
 /// Recuperación ante errores:
@@ -88,7 +89,7 @@ class GitSyncService {
   /// git add .
   Future<GitOperationResult> addAll() => _run('git', ['add', '.']);
 
-  /// git commit -m "<message>".
+  /// git commit -m "< message>".
   Future<GitOperationResult> commit(String message) =>
       _run('git', ['commit', '-m', message]);
 

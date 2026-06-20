@@ -244,7 +244,7 @@ class InventoryProductCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ExpansionTile(
         leading: CircleAvatar(
-          backgroundColor: stockColor.withOpacity(0.15),
+          backgroundColor: stockColor.withValues(alpha: 0.15),
           child: Text(
             item.quantity.toString(),
             style: TextStyle(
@@ -395,7 +395,7 @@ class _SaleabilityBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: _getSaleabilityColor(score).withOpacity(0.2),
+        color: _getSaleabilityColor(score).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -558,7 +558,7 @@ class TopProductsList extends StatelessWidget {
                       height: 32,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: _getPositionColor(index).withOpacity(0.2),
+                        color: _getPositionColor(index).withValues(alpha: 0.2),
                       ),
                       child: Center(
                         child: Text(
@@ -622,7 +622,7 @@ class TopProductsList extends StatelessWidget {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

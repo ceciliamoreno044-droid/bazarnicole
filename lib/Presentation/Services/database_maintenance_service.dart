@@ -349,7 +349,8 @@ class DatabaseMaintenanceService {
     return _cleanExpiredCache(db);
   }
 
-  /// Limpia TODO el caché analítico (útil tras actualización de datos masiva).
+  /// Limpia
+  /// t odo el caché analítico (útil tras actualización de datos masiva).
   Future<int> clearAllAnalyticsCache() async {
     final db = await _db;
     return db.delete('analytics_cache');

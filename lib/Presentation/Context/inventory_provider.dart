@@ -81,13 +81,13 @@ class InventoryProvider extends ChangeNotifier {
   Future<void> _loadSalesData() async {
     try {
       if (selectedStoreId == null) return;
-      
+
       // Obtener unidades vendidas en los últimos 30 días
       final unitsSold = await DatabaseService.getUnitsSoldByProduct(
         storeId: selectedStoreId!,
         dateFrom: DateTime.now().subtract(const Duration(days: 30)),
       );
-      
+
       _unitsSoldByProduct.clear();
       _unitsSoldByProduct.addAll(unitsSold);
     } catch (e) {
@@ -106,7 +106,9 @@ class InventoryProvider extends ChangeNotifier {
     }).toList();
 
     // Ordenar por saleability score (descendente)
-    filteredItems.sort((a, b) => b.saleabilityScore.compareTo(a.saleabilityScore));
+    filteredItems.sort(
+      (a, b) => b.saleabilityScore.compareTo(a.saleabilityScore),
+    );
   }
 
   void _calculateSummary() {
@@ -115,13 +117,20 @@ class InventoryProvider extends ChangeNotifier {
       return;
     }
 
-    final totalInvested =
-        inventoryItems.fold<double>(0, (sum, item) => sum + item.investmentValue);
-    final totalPotentialGain =
-        inventoryItems.fold<double>(0, (sum, item) => sum + item.potentialGain);
+    final totalInvested = inventoryItems.fold<double>(
+      0,
+      (sum, item) => sum + item.investmentValue,
+    );
+    final totalPotentialGain = inventoryItems.fold<double>(
+      0,
+      (sum, item) => sum + item.potentialGain,
+    );
 
     final lowStock = inventoryItems.where((i) => i.isLowStock).length;
-    final totalUnits = inventoryItems.fold<int>(0, (sum, i) => sum + i.quantity);
+    final totalUnits = inventoryItems.fold<int>(
+      0,
+      (sum, i) => sum + i.quantity,
+    );
 
     // Top 5 más vendidos
     final topSellers = [...inventoryItems]
@@ -133,14 +142,14 @@ class InventoryProvider extends ChangeNotifier {
 
     final avgMargin = inventoryItems.isNotEmpty
         ? (inventoryItems.fold<double>(0, (sum, i) => sum + i.marginPercent) /
-            inventoryItems.length)
-            .toDouble()
+                  inventoryItems.length)
+              .toDouble()
         : 0.0;
 
     final avgRotation = inventoryItems.isNotEmpty
         ? (inventoryItems.fold<double>(0, (sum, i) => sum + i.rotationRate) /
-            inventoryItems.length)
-            .toDouble()
+                  inventoryItems.length)
+              .toDouble()
         : 0.0;
 
     summary = InventorySummary(
@@ -164,10 +173,7 @@ class InventoryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateStock({
-    required int productId,
-    required int stock,
-  }) async {
+  Future<void> updateStock({required int productId, required int stock}) async {
     if (selectedStoreId == null) return;
     try {
       await DatabaseService.updateInventoryStock(
@@ -208,10 +214,9 @@ class InventoryProvider extends ChangeNotifier {
         ..sort((a, b) => b.saleabilityScore.compareTo(a.saleabilityScore));
 
   /// Obtiene productos con inversión crítica (stock bajo pero alto valor)
-  List<InventoryItem> get criticalInvestment =>
-      filteredItems
-          .where((item) => item.isLowStock && item.investmentValue > 500)
-          .toList();
+  List<InventoryItem> get criticalInvestment => filteredItems
+      .where((item) => item.isLowStock && item.investmentValue > 500)
+      .toList();
 
   /// Obtiene productos con mejor margen pero bajo stock
   List<InventoryItem> get highMarginLowStock => filteredItems
@@ -228,17 +233,17 @@ class InventoryProvider extends ChangeNotifier {
     DateTime? dateTo,
   }) async {
     if (selectedStoreId == null) return {};
-    
+
     try {
       isLoading = true;
       notifyListeners();
-      
+
       final report = await DatabaseService.getInventoryAnalysisReport(
         storeId: selectedStoreId!,
         dateFrom: dateFrom,
         dateTo: dateTo,
       );
-      
+
       return report;
     } catch (e) {
       errorMessage = 'Error generando reporte: $e';
@@ -257,7 +262,7 @@ class InventoryProvider extends ChangeNotifier {
     DateTime? dateTo,
   }) async {
     if (selectedStoreId == null) return [];
-    
+
     try {
       return await DatabaseService.getTopSellingProducts(
         storeId: selectedStoreId!,
@@ -276,7 +281,7 @@ class InventoryProvider extends ChangeNotifier {
     int limit = 10,
   }) async {
     if (selectedStoreId == null) return [];
-    
+
     try {
       return await DatabaseService.getTopMarginProducts(
         storeId: selectedStoreId!,
@@ -289,11 +294,9 @@ class InventoryProvider extends ChangeNotifier {
   }
 
   /// Obtiene rotación promedio de inventario (unidades/día)
-  Future<double> getAverageRotationValue({
-    int daysToAnalyze = 30,
-  }) async {
+  Future<double> getAverageRotationValue({int daysToAnalyze = 30}) async {
     if (selectedStoreId == null) return 0.0;
-    
+
     try {
       return await DatabaseService.getAverageInventoryRotation(
         storeId: selectedStoreId!,
@@ -308,7 +311,7 @@ class InventoryProvider extends ChangeNotifier {
   /// Obtiene tendencia de ventas últimos 7 días
   Future<Map<String, double>> getSalesTrend() async {
     if (selectedStoreId == null) return {};
-    
+
     try {
       return await DatabaseService.getSalesTrendLast7Days(
         storeId: selectedStoreId!,
@@ -325,7 +328,7 @@ class InventoryProvider extends ChangeNotifier {
     int maxStock = 2,
   }) async {
     if (selectedStoreId == null) return [];
-    
+
     try {
       return await DatabaseService.getCriticalInvestmentProducts(
         storeId: selectedStoreId!,
@@ -341,7 +344,7 @@ class InventoryProvider extends ChangeNotifier {
   /// Obtiene resumen de inversión desde BD
   Future<Map<String, dynamic>> getInvestmentSummary() async {
     if (selectedStoreId == null) return {};
-    
+
     try {
       return await DatabaseService.getInventoryInvestmentSummary(
         storeId: selectedStoreId!,

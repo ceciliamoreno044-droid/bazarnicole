@@ -83,7 +83,7 @@ class AnalyticsService {
   /// Si no existe o es del día anterior, dispara recálculo en background.
   Future<Map<String, dynamic>> getKpiSnapshot(int storeId) async {
     const cacheKey = 'kpi_';
-    final key = '$cacheKey${storeId}';
+    final key = '$cacheKey$storeId';
     final cached = await getCacheEntry(key);
     if (cached != null) return cached;
 
@@ -196,8 +196,9 @@ class AnalyticsService {
   }) async {
     final cacheKey = 'store_${storeId}_daily_$days';
     final cached = await getCacheEntry(cacheKey);
-    if (cached != null)
+    if (cached != null) {
       return List<Map<String, dynamic>>.from(cached['rows'] as List);
+    }
 
     final db = await _db;
     final since = DateTime.now()
@@ -233,8 +234,9 @@ class AnalyticsService {
   }) async {
     final cacheKey = 'store_${storeId}_monthly_$months';
     final cached = await getCacheEntry(cacheKey);
-    if (cached != null)
+    if (cached != null) {
       return List<Map<String, dynamic>>.from(cached['rows'] as List);
+    }
 
     final db = await _db;
     final rows = await db.rawQuery(
@@ -269,8 +271,9 @@ class AnalyticsService {
     final cacheKey =
         'store_${storeId}_top_products_${periodDays}_${orderBy}_$limit';
     final cached = await getCacheEntry(cacheKey);
-    if (cached != null)
+    if (cached != null) {
       return List<Map<String, dynamic>>.from(cached['rows'] as List);
+    }
 
     final db = await _db;
     final orderCol = switch (orderBy) {
@@ -314,8 +317,9 @@ class AnalyticsService {
   ) async {
     final cacheKey = 'store_${storeId}_rfm_dist';
     final cached = await getCacheEntry(cacheKey);
-    if (cached != null)
+    if (cached != null) {
       return List<Map<String, dynamic>>.from(cached['rows'] as List);
+    }
 
     final db = await _db;
     // rfm_segment está desnormalizado en clients — O(1) por índice

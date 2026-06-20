@@ -36,7 +36,7 @@ class _DenominationInputWidgetState extends State<DenominationInputWidget> {
   void initState() {
     super.initState();
 
-    DenominationEntry _findOrCreate(CashDenomination denom) {
+    DenominationEntry findOrCreate(CashDenomination denom) {
       if (widget.initialEntries != null) {
         final found = widget.initialEntries!.where(
           (e) =>
@@ -48,8 +48,8 @@ class _DenominationInputWidgetState extends State<DenominationInputWidget> {
       return DenominationEntry(denomination: denom);
     }
 
-    _billEntries = CashDenominations.bills.map(_findOrCreate).toList();
-    _coinEntries = CashDenominations.coins.map(_findOrCreate).toList();
+    _billEntries = CashDenominations.bills.map(findOrCreate).toList();
+    _coinEntries = CashDenominations.coins.map(findOrCreate).toList();
   }
 
   List<DenominationEntry> get _allEntries => [..._billEntries, ..._coinEntries];

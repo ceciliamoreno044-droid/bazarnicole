@@ -188,7 +188,7 @@ class SaleProvider extends ChangeNotifier {
       //   createdAt: DateTime.now(),
       // );
 
-      // TODO: Implementar createSale en DatabaseService
+      //
       // await DatabaseService.createSale(sale.toMap());
 
       clearCart();

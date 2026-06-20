@@ -14,9 +14,7 @@ class LegalPageWidget extends StatelessWidget {
   const LegalPageWidget({super.key, required this.type});
 
   static void show(BuildContext context, LegalDocType type) {
-    final route = type == LegalDocType.terms
-        ? '/terms'
-        : '/privacy';
+    final route = type == LegalDocType.terms ? '/terms' : '/privacy';
     Navigator.of(context).pushNamed(route);
   }
 
@@ -65,16 +63,13 @@ class LegalPageWidget extends StatelessWidget {
                 const SizedBox(width: 6),
                 const Text(
                   'Última actualización: 17 de abril de 2026',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.mediumGray,
-                  ),
+                  style: TextStyle(fontSize: 11, color: AppColors.mediumGray),
                 ),
               ],
             ),
           ),
           Divider(
-            color: AppColors.greyOverlay.withOpacity(0.4),
+            color: AppColors.greyOverlay.withValues(alpha: 0.4),
             height: 1,
             indent: 20,
             endIndent: 20,
@@ -128,7 +123,7 @@ class _SectionTileState extends State<_SectionTile> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: AppColors.greyOverlay.withOpacity(0.4),
+          color: AppColors.greyOverlay.withValues(alpha: 0.4),
           width: 0.8,
         ),
       ),
@@ -141,7 +136,7 @@ class _SectionTileState extends State<_SectionTile> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.primaryBlue.withOpacity(0.1),
+              color: AppColors.primaryBlue.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(

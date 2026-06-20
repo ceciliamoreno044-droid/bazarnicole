@@ -51,8 +51,17 @@ class _UsersViewState extends State<UsersView> {
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, i) => _UserCard(user: ctrl.users[i])
                 .animate()
-                .fadeIn(delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms)
-                .slideX(begin: 0.1, end: 0, delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms, curve: Curves.easeOut),
+                .fadeIn(
+                  delay: Duration(milliseconds: 40 * (i % 20)),
+                  duration: 300.ms,
+                )
+                .slideX(
+                  begin: 0.1,
+                  end: 0,
+                  delay: Duration(milliseconds: 40 * (i % 20)),
+                  duration: 300.ms,
+                  curve: Curves.easeOut,
+                ),
           );
         },
       ),
@@ -91,7 +100,7 @@ class _UserCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: roleColor.withOpacity(0.15),
+          backgroundColor: roleColor.withValues(alpha: 0.15),
           child: Text(
             user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
             style: TextStyle(color: roleColor, fontWeight: FontWeight.bold),
@@ -123,7 +132,7 @@ class _UserCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: roleColor.withOpacity(0.12),
+                color: roleColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(

@@ -25,7 +25,7 @@ class PurchaseProvider extends ChangeNotifier {
 
     try {
       final rawPurchases = await DatabaseService.getPurchaseHistory();
-      
+
       purchases = rawPurchases.map((p) {
         return Purchase(
           id: (p['id'] as num).toInt(),
@@ -44,8 +44,10 @@ class PurchaseProvider extends ChangeNotifier {
 
       if (fromDate != null && toDate != null) {
         purchases = purchases
-            .where((p) =>
-                p.orderDate.isAfter(fromDate) && p.orderDate.isBefore(toDate))
+            .where(
+              (p) =>
+                  p.orderDate.isAfter(fromDate) && p.orderDate.isBefore(toDate),
+            )
             .toList();
       }
 
@@ -59,10 +61,15 @@ class PurchaseProvider extends ChangeNotifier {
   }
 
   /// Añade un producto a la orden
-  void addOrderItem(int productId, String productName, int quantity,
-      double unitCost) {
-    final existingIndex =
-        orderItems.indexWhere((item) => item.productId == productId);
+  void addOrderItem(
+    int productId,
+    String productName,
+    int quantity,
+    double unitCost,
+  ) {
+    final existingIndex = orderItems.indexWhere(
+      (item) => item.productId == productId,
+    );
 
     if (existingIndex >= 0) {
       final existingItem = orderItems[existingIndex];
@@ -75,14 +82,16 @@ class PurchaseProvider extends ChangeNotifier {
         totalCost: (unitCost * (existingItem.orderedQuantity + quantity)),
       );
     } else {
-      orderItems.add(PurchaseItem(
-        productId: productId,
-        productName: productName,
-        orderedQuantity: quantity,
-        receivedQuantity: 0,
-        unitCost: unitCost,
-        totalCost: unitCost * quantity,
-      ));
+      orderItems.add(
+        PurchaseItem(
+          productId: productId,
+          productName: productName,
+          orderedQuantity: quantity,
+          receivedQuantity: 0,
+          unitCost: unitCost,
+          totalCost: unitCost * quantity,
+        ),
+      );
     }
 
     notifyListeners();
@@ -185,9 +194,10 @@ class PurchaseProvider extends ChangeNotifier {
       //   createdAt: DateTime.now(),
       // );
 
-      // TODO: Implementar createPurchase en DatabaseService
+      // odo
+      //Implementar createPurchase en DatabaseService
       // await DatabaseService.createPurchase(purchase.toMap());
-      
+
       clearOrder();
       await loadPurchases();
 
@@ -210,7 +220,8 @@ class PurchaseProvider extends ChangeNotifier {
       isLoading = true;
       notifyListeners();
 
-      // TODO: Implementar updatePurchaseStatus en DatabaseService
+      // t odo
+      //Implementar updatePurchaseStatus en DatabaseService
       // await DatabaseService.updatePurchaseStatus(
       //   purchaseId,
       //   status: PurchaseStatus.received,
@@ -251,8 +262,6 @@ class PurchaseProvider extends ChangeNotifier {
       purchases.fold<double>(0, (sum, p) => sum + p.pendingAmount);
 
   /// Compras por recibir
-  int get purchasesNotReceived => purchases
-      .where(
-          (p) => p.status == PurchaseStatus.pending)
-      .length;
+  int get purchasesNotReceived =>
+      purchases.where((p) => p.status == PurchaseStatus.pending).length;
 }

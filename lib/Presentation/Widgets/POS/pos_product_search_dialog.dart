@@ -254,19 +254,21 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? AppColors.blackOverlay.withOpacity(
-                                              0.3,
+                                          ? AppColors.blackOverlay.withValues(
+                                              alpha: 0.3,
                                             )
-                                          : AppColors.blackOverlay.withOpacity(
-                                              0.1,
+                                          : AppColors.blackOverlay.withValues(
+                                              alpha: 0.1,
                                             ),
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
                                         color: isSelected
-                                            ? AppColors.blackOverlay
-                                                  .withOpacity(0.3)
-                                            : AppColors.blackOverlay
-                                                  .withOpacity(0.1),
+                                            ? AppColors.blackOverlay.withValues(
+                                                alpha: 0.3,
+                                              )
+                                            : AppColors.blackOverlay.withValues(
+                                                alpha: 0.1,
+                                              ),
                                       ),
                                     ),
                                     child: Row(
@@ -356,10 +358,14 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                             margin: const EdgeInsets.fromLTRB(16, 6, 16, 0),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.blackOverlay.withOpacity(0.1),
+                              color: AppColors.blackOverlay.withValues(
+                                alpha: 0.1,
+                              ),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: AppColors.blackOverlay.withOpacity(0.2),
+                                color: AppColors.blackOverlay.withValues(
+                                  alpha: 0.2,
+                                ),
                               ),
                             ),
                             child: Column(

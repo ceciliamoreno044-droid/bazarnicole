@@ -85,8 +85,17 @@ class _CajerosViewState extends State<CajerosView> {
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, i) => _CajeroCard(user: cajeros[i])
                 .animate()
-                .fadeIn(delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms)
-                .slideX(begin: 0.1, end: 0, delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms, curve: Curves.easeOut),
+                .fadeIn(
+                  delay: Duration(milliseconds: 40 * (i % 20)),
+                  duration: 300.ms,
+                )
+                .slideX(
+                  begin: 0.1,
+                  end: 0,
+                  delay: Duration(milliseconds: 40 * (i % 20)),
+                  duration: 300.ms,
+                  curve: Curves.easeOut,
+                ),
           );
         },
       ),
@@ -120,7 +129,7 @@ class _CajeroCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Colors.teal.withOpacity(0.15),
+          backgroundColor: Colors.teal.withValues(alpha: 0.15),
           child: Text(
             user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
             style: const TextStyle(
@@ -141,8 +150,8 @@ class _CajeroCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: user.isActive
-                    ? Colors.green.withOpacity(0.12)
-                    : Colors.red.withOpacity(0.12),
+                    ? Colors.green.withValues(alpha: 0.12)
+                    : Colors.red.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(

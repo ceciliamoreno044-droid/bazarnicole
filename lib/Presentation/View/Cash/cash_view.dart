@@ -86,7 +86,9 @@ class _CashViewState extends State<CashView>
               bottom: TabBar(
                 controller: _tabController,
                 labelColor: AppColors.whiteOverlay,
-                unselectedLabelColor: AppColors.whiteOverlay.withOpacity(0.5),
+                unselectedLabelColor: AppColors.whiteOverlay.withValues(
+                  alpha: 0.5,
+                ),
                 indicatorColor: AppColors.whiteOverlay,
                 tabs: const [
                   Tab(text: 'Caja'),
@@ -303,36 +305,46 @@ class _CajaTab extends StatelessWidget {
                   final i = entry.key;
                   final m = entry.value;
                   return Card(
-                    elevation: 4,
-                    color: AppColors.whiteOverlay,
-                    child: ListTile(
-                      leading: Icon(
-                        m['type'] == 'income'
-                            ? Icons.arrow_downward
-                            : Icons.arrow_upward,
-                        color: m['type'] == 'income'
-                            ? Colors.green
-                            : Colors.red,
-                      ),
-                      title: Text(
-                        m['description']?.toString().isNotEmpty == true
-                            ? m['description'].toString()
-                            : (m['type'] == 'income' ? 'Ingreso' : 'Gasto'),
-                      ),
-                      subtitle: Text('Método: ${m['method']}'),
-                      trailing: Text(
-                        '\$${((m['amount'] ?? 0) as num).toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: m['type'] == 'income'
-                              ? Colors.green
-                              : Colors.red,
+                        elevation: 4,
+                        color: AppColors.whiteOverlay,
+                        child: ListTile(
+                          leading: Icon(
+                            m['type'] == 'income'
+                                ? Icons.arrow_downward
+                                : Icons.arrow_upward,
+                            color: m['type'] == 'income'
+                                ? Colors.green
+                                : Colors.red,
+                          ),
+                          title: Text(
+                            m['description']?.toString().isNotEmpty == true
+                                ? m['description'].toString()
+                                : (m['type'] == 'income' ? 'Ingreso' : 'Gasto'),
+                          ),
+                          subtitle: Text('Método: ${m['method']}'),
+                          trailing: Text(
+                            '\$${((m['amount'] ?? 0) as num).toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: m['type'] == 'income'
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ).animate()
-                    .fadeIn(delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms)
-                    .slideX(begin: -0.1, end: 0, delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms, curve: Curves.easeOut);
+                      )
+                      .animate()
+                      .fadeIn(
+                        delay: Duration(milliseconds: 40 * (i % 20)),
+                        duration: 300.ms,
+                      )
+                      .slideX(
+                        begin: -0.1,
+                        end: 0,
+                        delay: Duration(milliseconds: 40 * (i % 20)),
+                        duration: 300.ms,
+                        curve: Curves.easeOut,
+                      );
                 }),
             ],
           ),

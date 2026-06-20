@@ -5,11 +5,11 @@ import 'package:bazarnicole/Presentation/Services/database_service.dart';
 class ReportsProvider extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
-  
+
   int? selectedStoreId;
   DateTime? dateFrom;
   DateTime? dateTo;
-  
+
   // Datos de reportes
   Map<String, dynamic> analysisReport = {};
   List<Map<String, dynamic>> topSellers = [];
@@ -28,7 +28,7 @@ class ReportsProvider extends ChangeNotifier {
     selectedStoreId = storeId;
     dateFrom = from;
     dateTo = to;
-    
+
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -55,13 +55,8 @@ class ReportsProvider extends ChangeNotifier {
           dateFrom: from,
           dateTo: to,
         ),
-        DatabaseService.getTopMarginProducts(
-          storeId: storeId,
-          topCount: 15,
-        ),
-        DatabaseService.getCriticalInvestmentProducts(
-          storeId: storeId,
-        ),
+        DatabaseService.getTopMarginProducts(storeId: storeId, topCount: 15),
+        DatabaseService.getCriticalInvestmentProducts(storeId: storeId),
         DatabaseService.getInventoryInvestmentSummary(storeId: storeId),
         DatabaseService.getSalesTrendLast7Days(storeId: storeId),
         DatabaseService.getAverageInventoryRotation(
@@ -89,7 +84,7 @@ class ReportsProvider extends ChangeNotifier {
   /// Obtiene solo top sellers
   Future<void> refreshTopSellers({int limit = 15}) async {
     if (selectedStoreId == null) return;
-    
+
     try {
       topSellers = await DatabaseService.getTopSellingProducts(
         storeId: selectedStoreId!,
@@ -107,7 +102,7 @@ class ReportsProvider extends ChangeNotifier {
   /// Obtiene solo top margin
   Future<void> refreshTopMargin({int limit = 15}) async {
     if (selectedStoreId == null) return;
-    
+
     try {
       topMargin = await DatabaseService.getTopMarginProducts(
         storeId: selectedStoreId!,
@@ -126,10 +121,9 @@ class ReportsProvider extends ChangeNotifier {
     int maxStock = 2,
   }) async {
     if (selectedStoreId == null) return;
-    
+
     try {
-      criticalProducts =
-          await DatabaseService.getCriticalInvestmentProducts(
+      criticalProducts = await DatabaseService.getCriticalInvestmentProducts(
         storeId: selectedStoreId!,
         minInvestmentValue: minInvestment,
         maxStock: maxStock,
@@ -144,7 +138,7 @@ class ReportsProvider extends ChangeNotifier {
   /// Obtiene solo resumen de inversión
   Future<void> refreshInvestmentSummary() async {
     if (selectedStoreId == null) return;
-    
+
     try {
       investmentSummary = await DatabaseService.getInventoryInvestmentSummary(
         storeId: selectedStoreId!,
@@ -159,7 +153,7 @@ class ReportsProvider extends ChangeNotifier {
   /// Obtiene tendencia de ventas
   Future<void> refreshSalesTrend() async {
     if (selectedStoreId == null) return;
-    
+
     try {
       salesTrend = await DatabaseService.getSalesTrendLast7Days(
         storeId: selectedStoreId!,
@@ -174,7 +168,7 @@ class ReportsProvider extends ChangeNotifier {
   /// Obtiene rotación promedio
   Future<void> refreshAverageRotation() async {
     if (selectedStoreId == null) return;
-    
+
     try {
       averageRotation = await DatabaseService.getAverageInventoryRotation(
         storeId: selectedStoreId!,
@@ -243,7 +237,7 @@ class ReportsProvider extends ChangeNotifier {
   double get averageDailySales {
     if (salesTrend.isEmpty) return 0.0;
     final total = salesTrend.values.fold<double>(0, (sum, val) => sum + val);
-    return total / (salesTrend.length > 0 ? salesTrend.length : 1);
+    return total / (salesTrend.isNotEmpty ? salesTrend.length : 1);
   }
 
   /// Venta máxima en los últimos 7 días

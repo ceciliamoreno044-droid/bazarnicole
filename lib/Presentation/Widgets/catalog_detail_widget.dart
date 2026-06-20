@@ -265,7 +265,7 @@ class _HeroImage extends StatelessWidget {
             errorBuilder: (_, __, ___) => Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [accentColor, accentColor.withOpacity(0.5)],
+                  colors: [accentColor, accentColor.withValues(alpha: 0.5)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -288,7 +288,10 @@ class _HeroImage extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [Colors.black.withOpacity(0.4), Colors.transparent],
+                  colors: [
+                    Colors.black.withValues(alpha: 0.4),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
@@ -333,10 +336,10 @@ class _ProductGallery extends StatelessWidget {
                 _variantUrl(_seeds[i]),
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(
-                  color: accentColor.withOpacity(0.12),
+                  color: accentColor.withValues(alpha: 0.12),
                   child: Icon(
                     Icons.image_outlined,
-                    color: accentColor.withOpacity(0.4),
+                    color: accentColor.withValues(alpha: 0.4),
                   ),
                 ),
               ),
@@ -360,9 +363,9 @@ class _DetailTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.09),
+        color: color.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.35), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
       ),
       child: Text(
         label,
@@ -391,9 +394,9 @@ class _CategoryQr extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: accentColor.withOpacity(0.05),
+        color: accentColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: accentColor.withOpacity(0.2)),
+        border: Border.all(color: accentColor.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -430,7 +433,10 @@ class _CategoryQr extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             _qrUrl,
-            style: TextStyle(fontSize: 10, color: accentColor.withOpacity(0.7)),
+            style: TextStyle(
+              fontSize: 10,
+              color: accentColor.withValues(alpha: 0.7),
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -450,9 +456,9 @@ class _ContactCTA extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: accentColor.withOpacity(0.06),
+        color: accentColor.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: accentColor.withOpacity(0.2)),
+        border: Border.all(color: accentColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -529,10 +535,10 @@ class _ProductRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.15)),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -546,7 +552,7 @@ class _ProductRow extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(Icons.inventory_2_outlined, color: color, size: 18),

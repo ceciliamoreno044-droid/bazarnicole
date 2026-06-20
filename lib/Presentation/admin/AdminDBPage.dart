@@ -302,7 +302,7 @@ class _AdminDBPageState extends State<AdminDBPage>
         } else {
           // Para desktop, usar la ruta obtenida del LocationService
           final String backupPath =
-              '${path}.backup.${DateTime.now().millisecondsSinceEpoch}';
+              '$path.backup.${DateTime.now().millisecondsSinceEpoch}';
           await File(path).copy(backupPath);
           await selectedFile.copy(path);
         }
@@ -362,7 +362,7 @@ class _AdminDBPageState extends State<AdminDBPage>
 
       // Hacer backup de la DB actual
       final String backupPath =
-          '${realDbPath}.backup.${DateTime.now().millisecondsSinceEpoch}';
+          '$realDbPath.backup.${DateTime.now().millisecondsSinceEpoch}';
 
       // Verificar si existe la DB actual para hacer backup
       if (await File(realDbPath).exists()) {

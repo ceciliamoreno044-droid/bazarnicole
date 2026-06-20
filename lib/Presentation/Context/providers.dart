@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:nested/nested.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 import 'product_provider.dart';
 import 'customer_provider.dart';
 import 'sale_provider.dart';

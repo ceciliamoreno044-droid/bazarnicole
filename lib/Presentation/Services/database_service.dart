@@ -1905,8 +1905,9 @@ class DatabaseService {
     String? identificationType,
     String? address,
   }) async {
-    if (name.trim().isEmpty)
+    if (name.trim().isEmpty) {
       throw Exception('El nombre del cliente es obligatorio');
+    }
     final db = await database;
     await db.update(
       'clients',
@@ -2883,7 +2884,6 @@ class DatabaseService {
 
       return unitsSold;
     } catch (e) {
-      print('Error en getUnitsSoldByProduct: $e');
       return {};
     }
   }
@@ -2913,7 +2913,7 @@ class DatabaseService {
 
       final result = await db.rawQuery(
         '''
-        SELECT 
+        SELECT
           p.id,
           p.name,
           p.sku,
@@ -2933,7 +2933,6 @@ class DatabaseService {
 
       return result;
     } catch (e) {
-      print('Error en getTopSellingProducts: $e');
       return [];
     }
   }
@@ -2983,7 +2982,6 @@ class DatabaseService {
 
       return result;
     } catch (e) {
-      print('Error en getTopMarginProducts: $e');
       return [];
     }
   }
@@ -3048,7 +3046,6 @@ class DatabaseService {
         'lowStockCount': (row['lowStockCount'] as num?)?.toInt() ?? 0,
       };
     } catch (e) {
-      print('Error en getInventoryInvestmentSummary: $e');
       return {};
     }
   }
@@ -3094,7 +3091,6 @@ class DatabaseService {
 
       return trend;
     } catch (e) {
-      print('Error en getSalesTrendLast7Days: $e');
       return {};
     }
   }
@@ -3127,7 +3123,6 @@ class DatabaseService {
       final totalSold = (result.first['totalSold'] as num).toDouble();
       return totalSold / daysToAnalyze;
     } catch (e) {
-      print('Error en getAverageInventoryRotation: $e');
       return 0.0;
     }
   }
@@ -3169,7 +3164,6 @@ class DatabaseService {
 
       return result;
     } catch (e) {
-      print('Error en getCriticalInvestmentProducts: $e');
       return [];
     }
   }
@@ -3234,7 +3228,6 @@ class DatabaseService {
         'generatedAt': now.toIso8601String(),
       };
     } catch (e) {
-      print('Error en getInventoryAnalysisReport: $e');
       return {};
     }
   }

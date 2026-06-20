@@ -1273,7 +1273,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -1286,7 +1286,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        color: color.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(icon, color: color, size: 22),
@@ -1464,7 +1464,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primaryBlue,
                           side: BorderSide(
-                            color: AppColors.primaryBlue.withOpacity(0.4),
+                            color: AppColors.primaryBlue.withValues(alpha: 0.4),
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -1876,7 +1876,7 @@ class _HoverCardState extends State<_HoverCard> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(_hovered ? 0.10 : 0.05),
+                color: Colors.black.withValues(alpha: _hovered ? 0.10 : 0.05),
                 blurRadius: _hovered ? 20 : 10,
                 offset: Offset(0, _hovered ? 8 : 4),
               ),

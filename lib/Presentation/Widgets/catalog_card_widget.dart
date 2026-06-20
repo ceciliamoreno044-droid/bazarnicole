@@ -60,7 +60,7 @@ class _CatalogCategoryCardState extends State<CatalogCategoryCard>
         child: Card(
           color: AppColors.whiteOverlay,
           elevation: 4,
-          shadowColor: _accentColor.withOpacity(0.25),
+          shadowColor: _accentColor.withValues(alpha: 0.25),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -196,7 +196,7 @@ class _CardImage extends StatelessWidget {
             errorBuilder: (_, __, ___) => Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [accentColor, accentColor.withOpacity(0.6)],
+                  colors: [accentColor, accentColor.withValues(alpha: 0.6)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -219,7 +219,10 @@ class _CardImage extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [Colors.black.withOpacity(0.45), Colors.transparent],
+                  colors: [
+                    Colors.black.withValues(alpha: 0.45),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
@@ -242,9 +245,9 @@ class _TagChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3), width: 0.8),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 0.8),
       ),
       child: Text(
         label,

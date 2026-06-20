@@ -35,7 +35,10 @@ class _SuppliersViewState extends State<SuppliersView> {
     return Scaffold(
       backgroundColor: AppColors.lightGray,
       appBar: AppBar(
-        title: const Text('Proveedores', style: TextStyle(color: AppColors.threeColor)),
+        title: const Text(
+          'Proveedores',
+          style: TextStyle(color: AppColors.threeColor),
+        ),
         backgroundColor: AppColors.primaryLogo,
         iconTheme: const IconThemeData(color: AppColors.threeColor),
         bottom: PreferredSize(
@@ -44,7 +47,8 @@ class _SuppliersViewState extends State<SuppliersView> {
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
             child: TextField(
               controller: _searchCtrl,
-              onChanged: (v) => context.read<SuppliersController>().updateSearch(v),
+              onChanged: (v) =>
+                  context.read<SuppliersController>().updateSearch(v),
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Buscar proveedor...',
@@ -65,7 +69,10 @@ class _SuppliersViewState extends State<SuppliersView> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 0,
+                  horizontal: 12,
+                ),
               ),
             ),
           ),
@@ -96,7 +103,11 @@ class _SuppliersViewState extends State<SuppliersView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.business_outlined, size: 64, color: Colors.grey[400]),
+                  Icon(
+                    Icons.business_outlined,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     ctrl.search.isNotEmpty
@@ -115,8 +126,17 @@ class _SuppliersViewState extends State<SuppliersView> {
             itemBuilder: (context, i) =>
                 _SupplierCard(supplier: ctrl.suppliers[i])
                     .animate()
-                    .fadeIn(delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms)
-                    .slideX(begin: 0.1, end: 0, delay: Duration(milliseconds: 40 * (i % 20)), duration: 300.ms, curve: Curves.easeOut),
+                    .fadeIn(
+                      delay: Duration(milliseconds: 40 * (i % 20)),
+                      duration: 300.ms,
+                    )
+                    .slideX(
+                      begin: 0.1,
+                      end: 0,
+                      delay: Duration(milliseconds: 40 * (i % 20)),
+                      duration: 300.ms,
+                      curve: Curves.easeOut,
+                    ),
           );
         },
       ),
@@ -153,7 +173,7 @@ class _SupplierCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
         leading: CircleAvatar(
-          backgroundColor: AppColors.primaryLogo.withOpacity(0.1),
+          backgroundColor: AppColors.primaryLogo.withValues(alpha: 0.1),
           child: Text(
             supplier.name.isNotEmpty ? supplier.name[0].toUpperCase() : '?',
             style: const TextStyle(
@@ -241,7 +261,11 @@ class _SupplierCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.notes_outlined, size: 16, color: Colors.grey),
+                  const Icon(
+                    Icons.notes_outlined,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -341,14 +365,14 @@ class _SupplierCard extends StatelessWidget {
               final err = await ctrl.deleteSupplier(supplier);
               if (err != null && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(err),
-                    backgroundColor: Colors.red,
-                  ),
+                  SnackBar(content: Text(err), backgroundColor: Colors.red),
                 );
               }
             },
-            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Eliminar',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -508,15 +532,17 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
     setState(() => _saving = false);
 
     if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(err), backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
     } else {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _isEditing ? 'Proveedor actualizado' : 'Proveedor creado exitosamente',
+            _isEditing
+                ? 'Proveedor actualizado'
+                : 'Proveedor creado exitosamente',
           ),
         ),
       );
